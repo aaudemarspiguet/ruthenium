@@ -1,31 +1,26 @@
 import os
 import yt_dlp as youtube_dl
-import eyed3
+from mutagen import File as MutagenFile
+from mutagen.id3 import ID3, APIC
+from mutagen.mp4 import MP4, MP4Cover
+from mutagen.flac import Picture
 import urllib.request
 from pathvalidate import sanitize_filename
 import tekore as tk
 
 
-def songs_downloader(sp: tk.Spotify, folder: str, tracks: list, quality= '320'):
+def songs_downloader(sp: tk.Spotify, folder: str, tracks: list, quality='320'):
     """
-    Download and tag a list of Spotify tracks as MP3s.
+    Download and tag a list of Spotify tracks as audio files (mp3, m4a, webm, etc.).
 
     sp:      Authenticated tekore.Spotify client
     folder: Top-level folder to place downloads
     tracks: List of tekore.FullTrack objects
     quality: Audio quality ('190' or '320')
     """
-    # Configure yt-dlp options per call
     ydl_opts = {
-        'ffmpeg_location': 'dependencies/ffmpeg.exe',
         'format': 'bestaudio/best',
-        'extractaudio': True,
-        'addmetadata': True,
-        'postprocessors': [{
-            'key': 'FFmpegExtractAudio',
-            'preferredcodec': 'mp3',
-            'preferredquality': quality,
-        }],
+        'outtmpl': None,  # set per track
         'logger': None,
     }
 
@@ -35,50 +30,64 @@ def songs_downloader(sp: tk.Spotify, folder: str, tracks: list, quality= '320'):
         album  = sanitize_filename(track.album.name)
 
         print(f"[{index}/{len(tracks)}] Downloading: {artist} - {title}")
-        ydl_opts['outtmpl'] = f"{artist} - {title}.%(ext)s"
+        ydl_opts['outtmpl'] = os.path.join(folder, f"{artist} - {title}.%(ext)s")
 
-        dest_dir   = folder
-        tmp_fname  = f"{artist} - {title}.mp3"
-        final_path = os.path.join(dest_dir, tmp_fname)
-
-        if os.path.exists(final_path):
-            print(" → already exists, skipping")
+        os.makedirs(folder, exist_ok=True)
+        try:
+            with youtube_dl.YoutubeDL(ydl_opts) as ydl:
+                result = ydl.extract_info(f"ytsearch1:{title} {artist}", download=True)
+                info = result['entries'][0] if 'entries' in result else result
+                downloaded_file = ydl.prepare_filename(info)
+        except Exception as e:
+            print(f"   ▶ Error downloading '{artist} - {title}': {e}")
             continue
 
-        os.makedirs(dest_dir, exist_ok=True)
+        # Tagging with mutagen
         try:
-            # Download via YouTube search
-            with youtube_dl.YoutubeDL(ydl_opts) as ydl:
-                ydl.download([f"ytsearch1:{title} {artist}"])
+            audio = MutagenFile(downloaded_file, easy=True)
+            if audio is None:
+                print(f"   ▶ Could not open file for tagging: {downloaded_file}")
+                continue
 
-            # Load and tag MP3
-            audiofile = eyed3.load(tmp_fname)
-            if not audiofile.tag:
-                audiofile.initTag()
-
-            audiofile.tag.artist       = artist
-            audiofile.tag.title        = title
-            audiofile.tag.album        = album
-            audiofile.tag.album_artist = track.album.artists[0].name
-
-            # Genre from Spotify metadata
+            # Universal tags
+            audio['title'] = title
+            audio['artist'] = artist
+            audio['album'] = album
+            audio['albumartist'] = track.album.artists[0].name
             genres = sp.artist(track.artists[0].id).genres
             if genres:
-                audiofile.tag.genre = genres[-1]
+                audio['genre'] = genres[-1]
+            audio['tracknumber'] = str(track.track_number)
+            audio.save()
 
-            audiofile.tag.track_num = track.track_number
+            # Add cover art (format-specific)
+            img_url = track.album.images[0].url if track.album.images else None
+            if img_url:
+                img_data = urllib.request.urlopen(img_url).read()
+                ext = os.path.splitext(downloaded_file)[1].lower()
+                if ext == '.mp3':
+                    id3 = ID3(downloaded_file)
+                    id3.add(APIC(
+                        encoding=3, mime='image/jpeg', type=3, desc='Cover', data=img_data
+                    ))
+                    id3.save()
+                elif ext == '.m4a':
+                    mp4 = MP4(downloaded_file)
+                    mp4['covr'] = [MP4Cover(img_data, imageformat=MP4Cover.FORMAT_JPEG)]
+                    mp4.save()
+                elif ext == '.flac':
+                    flac = MutagenFile(downloaded_file)
+                    pic = Picture()
+                    pic.data = img_data
+                    pic.type = 3
+                    pic.mime = 'image/jpeg'
+                    flac.add_picture(pic)
+                    flac.save()
+                # webm/opus/ogg: cover art not widely supported
 
-            # Embed album art
-            img_data = urllib.request.urlopen(track.album.images[0].url).read()
-            audiofile.tag.images.set(3, img_data, 'image/jpeg')
-            audiofile.tag.save()
-
-            # Move final file into place
-            os.replace(tmp_fname, final_path)
-            print(f" → saved to {final_path}")
-
+            print(f" → saved to {downloaded_file}")
         except Exception as e:
-            print(f"   ▶ Error on '{artist} - {title}': {e}")
+            print(f"   ▶ Error tagging '{artist} - {title}': {e}")
 
 
 def list_playlists(sp: tk.Spotify) -> list:
