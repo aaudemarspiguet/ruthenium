@@ -352,3 +352,11 @@ def cancel_job(job_id):
         job['cancelled'] = True
         flash("Download cancelled.", "info")
     return redirect(url_for('playlists'))
+
+@app.route('/favicon.ico')
+def favicon():
+    return send_from_directory(
+        os.path.join(app.root_path, 'static', 'assets'),
+        'favicon.ico',
+        mimetype='image/x-icon'
+    )
