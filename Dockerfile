@@ -1,15 +1,9 @@
 # ─── Base Image ───────────────────────────────────────────────────────
-FROM python:3.12.3-slim-bullseye
+FROM python:3.12.10-slim-bookworm
 
 # Upgrade pip and system packages to minimize vulnerabilities
 RUN apt-get update \
  && apt-get upgrade -y \
- && apt-get install -y --no-install-recommends \
-      ffmpeg \
- && rm -rf /var/lib/apt/lists/*
-
-# ─── Install System Dependencies ──────────────────────────────────────
-RUN apt-get update \
  && apt-get install -y --no-install-recommends \
       ffmpeg \
  && rm -rf /var/lib/apt/lists/*
