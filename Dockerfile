@@ -22,8 +22,4 @@ ENV PORT=8080
 RUN which ffmpeg && ffmpeg -version && which ffprobe && ffprobe -version
 
 # ─── Run with Gunicorn ────────────────────────────────────────────────
-CMD ["gunicorn", "index:app", \
-     "--bind", "0.0.0.0:8080", \
-     "--workers", "1", \
-     "--threads", "4", \
-     "--timeout", "120"]
+CMD ["gunicorn", "api.index:app", "--bind", "0.0.0.0:8080", "--workers", "1", "--threads", "4", "--timeout", "120"]
