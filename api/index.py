@@ -350,7 +350,3 @@ def cancel_job(job_id):
         job['cancelled'] = True
         flash("Download cancelled.", "info")
     return redirect(url_for('playlists'))
-
-# ─── Run ───────────────────────────────────────────────────────────
-if __name__ == '__main__':
-    app.run(debug=False, use_reloader=False, threaded=True)
