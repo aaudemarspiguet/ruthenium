@@ -10,8 +10,6 @@ from spotify import (
     list_liked_songs,
     songs_downloader,
 )
-import logging
-logging.basicConfig(level=logging.DEBUG)
 import os
 import tekore as tk
 from dotenv import load_dotenv
@@ -22,13 +20,14 @@ from math import ceil
 import shutil
 import tempfile
 from pathvalidate import sanitize_filename
-BASE_DOWNLOAD_DIR = os.path.join(app.root_path, 'downloaded')
-os.makedirs(BASE_DOWNLOAD_DIR, exist_ok=True)
 
 # ─── Flask app setup ──────────────────────────────────────────────
 load_dotenv()
 app = Flask(__name__)
 app.secret_key = os.getenv('FLASK_SECRET')
+
+BASE_DOWNLOAD_DIR = os.path.join(app.root_path, 'downloaded')
+os.makedirs(BASE_DOWNLOAD_DIR, exist_ok=True)
 
 jobs = {}  # job_id -> { status: 'queued'|'downloading'|'zipping'|'done' }
 
@@ -89,18 +88,20 @@ def get_spotify():
     return tk.Spotify(token)
 
 def download_and_zip(job_id, sp, download_path, tracks, quality):
-    base_dir    = os.path.dirname(download_path)
-    folder_name = os.path.basename(download_path)
+    base_dir    = os.path.dirname(download_path)    # "downloaded"
+    folder_name = os.path.basename(download_path)   # e.g. "My Playlist"
 
+    # 1) Download
     jobs[job_id]['status'] = 'downloading'
     for track in tracks:
         if jobs[job_id].get('cancelled'):
             jobs[job_id]['status'] = 'cancelled'
             return
-        songs_downloader(sp, download_path, [track], quality)
+        songs_downloader(sp, download_path, [track], quality)  # Pass quality here!
 
+    # 2) Zip
     jobs[job_id]['status'] = 'zipping'
-    zip_path = os.path.abspath(os.path.join(base_dir, f"{folder_name}.zip"))
+    zip_path = os.path.join(base_dir, f"{folder_name}.zip")
     with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zf:
         for root, _, files in os.walk(download_path):
             for fname in files:
@@ -108,9 +109,11 @@ def download_and_zip(job_id, sp, download_path, tracks, quality):
                 arc  = os.path.relpath(full, start=base_dir)
                 zf.write(full, arc)
 
+    # 3) Mark done and hand back the zip path
     jobs[job_id]['status']   = 'done'
     jobs[job_id]['zip_path'] = zip_path
 
+    # 4) Schedule cleanup of both folder and zip after 5 minutes
     def _cleanup():
         try:
             shutil.rmtree(download_path)
@@ -121,6 +124,7 @@ def download_and_zip(job_id, sp, download_path, tracks, quality):
         except Exception:
             pass
 
+    # 120 sec = 2 min grace period
     threading.Timer(120, _cleanup).start()
 
 # ─── Routes ───────────────────────────────────────────────────────

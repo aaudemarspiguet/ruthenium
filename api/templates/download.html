@@ -4,7 +4,7 @@
 {% block content %}
   {# ─── Header Row: Title | Quality + Download ─────────────────────── #}
   <div class="d-flex flex-wrap align-items-center mb-4 gap-3">
-    <h2 class="mb-0">Liked Songs</h2>
+    <h2 class="mb-0">liked songs</h2>
 
     <form
       id="download-form"
@@ -15,19 +15,23 @@
     >
       <input type="hidden" name="kind" value="liked">
       {{ macros.quality_select() }}
-      <button type="submit" class="btn btn-success">Download Selected</button>
+      <button type="submit" class="btn btn-success">download selected</button>
     </form>
   </div>
 
   {# ─── Search Bar (client-side) ───────────────────────────────────── #}
-  <div class="mb-3">
+  <form method="get" action="{{ url_for('liked') }}" class="mb-3 d-flex">
     <input
-      id="search"
-      type="text"
-      class="form-control"
-      placeholder="🔍 Search your liked songs…"
+    id="search"
+    name="search" 
+    type="text"
+    class="form-control me-2"
+    placeholder="🔍 Search your liked songs…"
+    value="{{ request.args.get('search','') }}"
     >
-  </div>
+    <button class="btn btn-outline-secondary" type="submit">Search</button>
+  </form>
+
 
   {# ─── Track List ─────────────────────────────────────────────────── #}
   <ul id="tracks-list" class="list-group mb-4">
@@ -56,7 +60,7 @@
   </ul>
 
   {# ─── Pagination ─────────────────────────────────────────────────── #}
-  {{ macros.paginate(page, total_pages, 'liked') }}
+  {{ macros.paginate(page, total_pages, 'liked', request.args.get('search','')) }}
 {% endblock %}
 
 {% block scripts %}
