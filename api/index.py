@@ -10,6 +10,8 @@ from spotify import (
     list_liked_songs,
     songs_downloader,
 )
+import logging
+logging.basicConfig(level=logging.DEBUG)
 import os
 import tekore as tk
 from dotenv import load_dotenv
