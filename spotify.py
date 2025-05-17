@@ -17,7 +17,7 @@ def songs_downloader(sp: tk.Spotify, folder: str, tracks: list, quality= '320'):
     """
     # Configure yt-dlp options per call
     ydl_opts = {
-        'ffmpeg_location': 'ffmpeg.exe',
+        'ffmpeg_location': 'ffmpeg',
         'format': 'bestaudio/best',
         'extractaudio': True,
         'addmetadata': True,
