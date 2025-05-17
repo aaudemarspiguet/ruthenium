@@ -21,6 +21,7 @@ import zipfile
 from math import ceil
 import shutil
 import tempfile
+from pathvalidate import sanitize_filename
 
 # ─── Flask app setup ──────────────────────────────────────────────
 load_dotenv()
@@ -244,78 +245,54 @@ def liked():
 
 @app.route('/download', methods=['POST'])
 def do_download():
+    # 0) Ensure we have a valid Spotify token
     if redirect_to := ensure_token():
         return redirect_to
 
-    sp = get_spotify()
+    sp   = get_spotify()
     kind = request.form['kind']
 
+    # 1) Figure out which tracks to download and what folder name to use
     if kind == 'playlist':
-        idx = int(request.form['idx'][0])
-        pl = list_playlists(sp)[idx]
-        items = get_playlist_tracks(sp, pl)
-        tracks = playlist_tracks_to_tracks(items)
+        idx        = int(request.form['idx'][0])
+        pl         = list_playlists(sp)[idx]
+        items      = get_playlist_tracks(sp, pl)
+        tracks     = playlist_tracks_to_tracks(items)
         folder_name = pl.name
     else:
-        all_liked = [item.track for item in list_liked_songs(sp)]
-        idx_list = request.form.getlist('idx')
+        all_liked  = [item.track for item in list_liked_songs(sp)]
+        idx_list   = request.form.getlist('idx')
         if idx_list:
             tracks = [all_liked[int(i)] for i in idx_list]
         else:
             tracks = all_liked
         folder_name = "Liked Songs"
 
-    # special case: no tracks
+    # 2) Bail out if there’s nothing to do
     if not tracks:
         flash("No tracks found to download.", "warning")
         return redirect(url_for('playlists'))
-    
-    # special case: single‐track
-    # singleton shortcut
-    if len(tracks) == 1:
-        track = tracks[0]
-        # 1) download into a temp dir you control
-        tmpdir = tempfile.mkdtemp(prefix="spotifydl_")
-        songs_downloader(sp, tmpdir, [track])
 
-        # 2) find the single .mp3
-        mp3s = [f for f in os.listdir(tmpdir) if f.lower().endswith('.mp3')]
-        if not mp3s:
-            flash("Download failed.", "danger")
-            return redirect(url_for('playlists'))
-        mp3_path = os.path.join(tmpdir, mp3s[0])
-
-        # 3) schedule cleanup in 5 minutes
-        def cleanup():
-            try:
-                shutil.rmtree(tmpdir)
-            except Exception:
-                pass
-        threading.Timer(120, cleanup).start()
-
-        # 4) send it immediately
-        return send_file(
-            mp3_path,
-            as_attachment=True,
-            download_name=mp3s[0]
-        )    
-        
-    # otherwise, we need to download multiple tracks
-    base_dir = "downloaded"
-    download_path = os.path.join(base_dir, folder_name)
-    os.makedirs(download_path, exist_ok=True)
-
-     # Pick up the user’s choice
+    # 3) Pick quality
     quality = request.form.get('quality', '320')
 
+    # 4) Prepare a unique job
     job_id = str(uuid.uuid4())
     jobs[job_id] = {'status': 'queued'}
+
+    # 5) Make a download folder for this job
+    base_dir      = "downloaded"
+    download_path = os.path.join(base_dir, f"{job_id}_{sanitize_filename(folder_name)}")
+    os.makedirs(download_path, exist_ok=True)
+
+    # 6) Fire off the background worker
     threading.Thread(
         target=download_and_zip,
         args=(job_id, sp, download_path, tracks, quality),
         daemon=True
     ).start()
 
+    # 7) Immediately redirect to the status page
     return redirect(url_for('status_page', job_id=job_id))
 
 @app.route('/status/<job_id>')

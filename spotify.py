@@ -6,53 +6,47 @@ from pathvalidate import sanitize_filename
 import tekore as tk
 
 
-def songs_downloader(sp: tk.Spotify, folder: str, tracks: list, quality= '320'):
+def songs_downloader(sp: tk.Spotify, folder: str, tracks: list, quality: str = '320'):
     """
     Download and tag a list of Spotify tracks as MP3s.
 
     sp:      Authenticated tekore.Spotify client
-    folder: Top-level folder to place downloads
-    tracks: List of tekore.FullTrack objects
+    folder:  Top-level folder to place downloads
+    tracks:  List of tekore.FullTrack objects
     quality: Audio quality ('190' or '320')
     """
-    # Configure yt-dlp options per call
-    ydl_opts = {
-        'ffmpeg_location': 'ffmpeg',
-        'format': 'bestaudio/best',
-        'extractaudio': True,
-        'addmetadata': True,
-        'postprocessors': [{
-            'key': 'FFmpegExtractAudio',
-            'preferredcodec': 'mp3',
-            'preferredquality': quality,
-        }],
-        'logger': None,
-    }
+    os.makedirs(folder, exist_ok=True)
 
-    for index, track in enumerate(tracks, start=1):
-        title  = sanitize_filename(track.name)
+    for idx, track in enumerate(tracks, start=1):
         artist = sanitize_filename(track.artists[0].name)
+        title  = sanitize_filename(track.name)
         album  = sanitize_filename(track.album.name)
 
-        print(f"[{index}/{len(tracks)}] Downloading: {artist} - {title}")
-        ydl_opts['outtmpl'] = f"{artist} - {title}.%(ext)s"
+        outtmpl = os.path.join(folder, f"{artist} - {title}.%(ext)s")
+        final_mp3 = os.path.join(folder, f"{artist} - {title}.mp3")
 
-        dest_dir   = folder
-        tmp_fname  = f"{artist} - {title}.mp3"
-        final_path = os.path.join(dest_dir, tmp_fname)
-
-        if os.path.exists(final_path):
-            print(" → already exists, skipping")
+        if os.path.exists(final_mp3):
+            print(f"[{idx}/{len(tracks)}] → '{artist} - {title}' already exists, skipping")
             continue
 
-        os.makedirs(dest_dir, exist_ok=True)
+        print(f"[{idx}/{len(tracks)}] Downloading: {artist} - {title}")
+        ydl_opts = {
+            'format': 'bestaudio/best',
+            'outtmpl': outtmpl,
+            'postprocessors': [{
+                'key': 'FFmpegExtractAudio',
+                'preferredcodec': 'mp3',
+                'preferredquality': quality,
+            }],
+            'addmetadata': True,
+            'logger': None,
+        }
+
         try:
-            # Download via YouTube search
             with youtube_dl.YoutubeDL(ydl_opts) as ydl:
                 ydl.download([f"ytsearch1:{title} {artist}"])
 
-            # Load and tag MP3
-            audiofile = eyed3.load(tmp_fname)
+            audiofile = eyed3.load(final_mp3)
             if not audiofile.tag:
                 audiofile.initTag()
 
@@ -60,26 +54,21 @@ def songs_downloader(sp: tk.Spotify, folder: str, tracks: list, quality= '320'):
             audiofile.tag.title        = title
             audiofile.tag.album        = album
             audiofile.tag.album_artist = track.album.artists[0].name
+            audiofile.tag.track_num    = track.track_number
 
-            # Genre from Spotify metadata
             genres = sp.artist(track.artists[0].id).genres
             if genres:
                 audiofile.tag.genre = genres[-1]
-
-            audiofile.tag.track_num = track.track_number
 
             # Embed album art
             img_data = urllib.request.urlopen(track.album.images[0].url).read()
             audiofile.tag.images.set(3, img_data, 'image/jpeg')
             audiofile.tag.save()
 
-            # Move final file into place
-            os.replace(tmp_fname, final_path)
-            print(f" → saved to {final_path}")
+            print(f"[{idx}/{len(tracks)}] → saved '{artist} - {title}.mp3'")
 
         except Exception as e:
-            print(f"   ▶ Error on '{artist} - {title}': {e}")
-
+            print(f"[{idx}/{len(tracks)}] ▶ Error on '{artist} - {title}': {e}")
 
 def list_playlists(sp: tk.Spotify) -> list:
     """

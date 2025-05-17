@@ -1,19 +1,15 @@
 # ─── Base Image ───────────────────────────────────────────────────────
-FROM python:alpine
+FROM python:3.13-slim-bookworm
 
-# Ensure all system packages are up to date to minimize vulnerabilities
-RUN apt-get update && apt-get upgrade -y && apt-get clean
-
-# Upgrade pip and system packages to minimize vulnerabilities
+# ─── Install FFmpeg (which includes ffprobe on Bookworm) ──────────────
 RUN apt-get update \
- && apt-get upgrade -y \
  && apt-get install -y --no-install-recommends \
       ffmpeg \
  && rm -rf /var/lib/apt/lists/*
 
 # ─── App Directory & Python Dependencies ─────────────────────────────
 WORKDIR /app
-COPY requirements.txt .
+COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 
 # ─── Copy Your Code ──────────────────────────────────────────────────
@@ -22,6 +18,12 @@ COPY . .
 # ─── Environment ─────────────────────────────────────────────────────
 ENV PYTHONUNBUFFERED=1
 ENV PORT=8080
+# ─── Sanity Check (optional; you can remove this after confirming) ────
+RUN which ffmpeg && ffmpeg -version && which ffprobe && ffprobe -version
 
 # ─── Run with Gunicorn ────────────────────────────────────────────────
-CMD ["gunicorn", "api.index:app", "--bind", "0.0.0.0:8080", "--workers", "2"]
+CMD ["gunicorn", "index:app", \
+     "--bind", "0.0.0.0:8080", \
+     "--workers", "1", \
+     "--threads", "4", \
+     "--timeout", "120"]
