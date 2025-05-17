@@ -1,7 +1,7 @@
 # ─── Imports ───────────────────────────────────────────────────
 from flask import (
     Flask, render_template, session, redirect, request,
-    url_for, flash, send_file, send_from_directory
+    url_for, flash, send_file
 )
 from spotify import (
     list_playlists,
@@ -247,42 +247,76 @@ def do_download():
     if redirect_to := ensure_token():
         return redirect_to
 
-    sp   = get_spotify()
+    sp = get_spotify()
     kind = request.form['kind']
+
+    if kind == 'playlist':
+        idx = int(request.form['idx'][0])
+        pl = list_playlists(sp)[idx]
+        items = get_playlist_tracks(sp, pl)
+        tracks = playlist_tracks_to_tracks(items)
+        folder_name = pl.name
+    else:
+        all_liked = [item.track for item in list_liked_songs(sp)]
+        idx_list = request.form.getlist('idx')
+        if idx_list:
+            tracks = [all_liked[int(i)] for i in idx_list]
+        else:
+            tracks = all_liked
+        folder_name = "Liked Songs"
+
+    # special case: no tracks
+    if not tracks:
+        flash("No tracks found to download.", "warning")
+        return redirect(url_for('playlists'))
+    
+    # special case: single‐track
+    # singleton shortcut
+    if len(tracks) == 1:
+        track = tracks[0]
+        # 1) download into a temp dir you control
+        tmpdir = tempfile.mkdtemp(prefix="spotifydl_")
+        songs_downloader(sp, tmpdir, [track])
+
+        # 2) find the single .mp3
+        mp3s = [f for f in os.listdir(tmpdir) if f.lower().endswith('.mp3')]
+        if not mp3s:
+            flash("Download failed.", "danger")
+            return redirect(url_for('playlists'))
+        mp3_path = os.path.join(tmpdir, mp3s[0])
+
+        # 3) schedule cleanup in 5 minutes
+        def cleanup():
+            try:
+                shutil.rmtree(tmpdir)
+            except Exception:
+                pass
+        threading.Timer(120, cleanup).start()
+
+        # 4) send it immediately
+        return send_file(
+            mp3_path,
+            as_attachment=True,
+            download_name=mp3s[0]
+        )    
+        
+    # otherwise, we need to download multiple tracks
+    base_dir = "downloaded"
+    download_path = os.path.join(base_dir, folder_name)
+    os.makedirs(download_path, exist_ok=True)
+
+     # Pick up the user’s choice
     quality = request.form.get('quality', '320')
 
-    # one‐line helper to pick tracks & folder
-    if kind == 'playlist':
-        idx   = int(request.form['idx'][0])
-        pl    = list_playlists(sp)[idx]
-        tracks = playlist_tracks_to_tracks(get_playlist_tracks(sp, pl))
-        folder = pl.name
-    else:
-        tracks = [item.track for item in list_liked_songs(sp)]
-        folder = "Liked Songs"
+    job_id = str(uuid.uuid4())
+    jobs[job_id] = {'status': 'queued'}
+    threading.Thread(
+        target=download_and_zip,
+        args=(job_id, sp, download_path, tracks, quality),
+        daemon=True
+    ).start()
 
-    if not tracks:
-        flash("No tracks to download.", "warning")
-        return redirect(url_for('playlists'))
-
-    # single‐track shortcut
-    if len(tracks) == 1:
-        tmp = tempfile.mkdtemp()
-        songs_downloader(sp, tmp, [tracks[0]], quality)
-        mp3 = next(f for f in os.listdir(tmp) if f.endswith('.mp3'))
-        return send_file(os.path.join(tmp, mp3),
-                         as_attachment=True,
-                         download_name=mp3)
-
-    # multiple‐track zip
-    base = tempfile.mkdtemp()
-    dest = os.path.join(base, folder)
-    os.makedirs(dest)
-    songs_downloader(sp, dest, tracks, quality)
-    zipf = shutil.make_archive(dest, 'zip', base_dir=base, root_dir=base)
-    return send_file(zipf,
-                     as_attachment=True,
-                     download_name=os.path.basename(zipf))
+    return redirect(url_for('status_page', job_id=job_id))
 
 @app.route('/status/<job_id>')
 def status_page(job_id):
