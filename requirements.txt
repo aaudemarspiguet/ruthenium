@@ -1,6 +1,6 @@
 Flask
 tekore
 yt_dlp
-mutagen
+eyed3
 pathvalidate
-python-dotenv
+python-dotenv   
