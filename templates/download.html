@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% import "_macros.html" as macros %}
+
+{% block content %}
+  {# ─── Header Row: Title | Quality + Download ─────────────────────── #}
+  <div class="d-flex flex-wrap align-items-center mb-4 gap-3">
+    <h2 class="mb-0">Liked Songs</h2>
+
+    <form
+      id="download-form"
+      method="post"
+      action="{{ url_for('do_download') }}"
+      class="d-flex flex-wrap align-items-center gap-2"
+      style="margin-left:auto;"
+    >
+      <input type="hidden" name="kind" value="liked">
+      {{ macros.quality_select() }}
+      <button type="submit" class="btn btn-success">Download Selected</button>
+    </form>
+  </div>
+
+  {# ─── Search Bar (client-side) ───────────────────────────────────── #}
+  <div class="mb-3">
+    <input
+      id="search"
+      type="text"
+      class="form-control"
+      placeholder="🔍 Search your liked songs…"
+    >
+  </div>
+
+  {# ─── Track List ─────────────────────────────────────────────────── #}
+  <ul id="tracks-list" class="list-group mb-4">
+    {% for track in items %}
+      <li class="list-group-item d-flex align-items-center">
+        <img
+          src="{{ track.album.images[-1].url }}"
+          class="cover-thumb me-3"
+          alt="cover"
+          loading="lazy"
+        >
+        <div class="track-info flex-fill">
+          <strong>{{ track.name }}</strong><br>
+          <small class="track-artist">
+            {{ track.artists | map(attribute='name') | join(', ') }}
+          </small>
+        </div>
+        <input
+          type="checkbox"
+          name="idx"
+          form="download-form"
+          value="{{ loop.index0 }}"
+        >
+      </li>
+    {% endfor %}
+  </ul>
+
+  {# ─── Pagination ─────────────────────────────────────────────────── #}
+  {{ macros.paginate(page, total_pages, 'liked') }}
+{% endblock %}
+
+{% block scripts %}
+  {{ super() }}
+  <script>
+    // simple client-side filter
+    document.getElementById('search').addEventListener('input', e => {
+      const q = e.target.value.toLowerCase();
+      document.querySelectorAll('#tracks-list li').forEach(li => {
+        li.style.display = li.innerText.toLowerCase().includes(q)
+          ? '' : 'none';
+      });
+    });
+  </script>
+{% endblock %}

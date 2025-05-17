@@ -1,0 +1,6 @@
+Flask
+tekore
+yt_dlp
+eyed3
+pathvalidate
+python-dotenv

@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="text-center py-5">
+  <!-- 1) The status heading we’ll overwrite: -->
+  <h3 id="status-heading">your tracks are downloading…</h3>
+
+  <!-- 2) Spinner we’ll hide later: -->
+  <div id="spinner" class="spinner-border" role="status">
+    <span class="visually-hidden">Loading…</span>
+  </div>
+
+  <!-- 3) Cancel button we’ll remove: -->
+  <div id="cancel-container" class="mt-3">
+    <form method="post" action="{{ url_for('cancel_job', job_id=job_id) }}">
+      <button type="submit" class="btn btn-danger">cancel</button>
+    </form>
+  </div>
+
+  <!-- 4) Placeholder for the “Download ZIP” button: -->
+  <div id="download-container" class="mt-3"></div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+  {{ super() }}
+  <script>
+  (function() {
+    console.log("status.js loaded");  // ← check your DevTools console
+
+    const statusUrl       = "{{ url_for('status_json',  job_id=job_id) }}";
+    const downloadUrl     = "{{ url_for('download_zip',  job_id=job_id) }}";
+    const playlistsUrl    = "{{ url_for('playlists') }}";
+
+    const heading         = document.getElementById('status-heading');
+    const spinner         = document.getElementById('spinner');
+    const cancelContainer = document.getElementById('cancel-container');
+    const downloadContainer = document.getElementById('download-container');
+
+    async function checkStatus() {
+      const res = await fetch(statusUrl);
+      if (res.status === 404) {
+        return window.location = playlistsUrl;
+      }
+      const { status } = await res.json();
+
+      if (status === 'done') {
+        // 1) Change heading
+        heading.textContent = 'all done!';
+        // 2) Hide spinner & cancel
+        spinner.style.display = 'none';
+        cancelContainer.style.display = 'none';
+        // 3) Show our ZIP button
+        downloadContainer.innerHTML = `
+          <a href="${downloadUrl}" class="btn btn-primary">
+            download ZIP
+          </a>`;
+      } else if (status === 'cancelled') {
+        window.location = playlistsUrl;
+      } else {
+        setTimeout(checkStatus, 2000);
+      }
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', checkStatus);
+    } else {
+      checkStatus();
+    }
+  })();
+  </script>
+{% endblock %}

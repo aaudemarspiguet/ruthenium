@@ -1,0 +1,501 @@
+/* ─── Layout & Theme ─────────────────────────────────────────────────── */
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  background: #111;
+  color: #eee;
+  font-family: 'Inter', 'Segoe UI', system-ui, Arial, sans-serif;
+  font-size: 15px;
+  min-height: 100vh;
+}
+.layout { display: flex; min-height: 100vh; }
+.sidebar {
+  width: 170px;
+  background: #181818;
+  display: flex; flex-direction: column; align-items: flex-start;
+  padding: 2rem 1rem 1rem 1rem;
+  border-right: 1px solid #232323;
+  box-sizing: border-box;
+}
+.brand {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin-bottom: 2.5rem;
+  letter-spacing: 0.5px;
+  color: #1db954;
+  text-shadow: 0 2px 8px #0006;
+  text-transform: lowercase;
+}
+.nav {
+  display: flex; flex-direction: column; gap: 0.5rem; width: 100%;
+}
+.nav a {
+  display: block; width: 100%; text-align: left;
+  background: #232323; color: #eee; border: none; border-radius: 7px;
+  padding: 0.55rem 0.9rem; font: inherit; cursor: pointer;
+  transition: background .15s, color .15s; outline: none;
+  text-decoration: none!important; text-transform: lowercase;
+}
+.nav a.active,
+.nav a:focus,
+.nav a:hover {
+  background: #1db954; color: #fff;
+}
+
+/* ─── Main content & Containers ─────────────────────────────────────── */
+.main-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: #111;
+  animation: fadein 0.5s;
+}
+.container {
+  max-width: 420px;
+  margin: 40px auto 0;
+  background: #181818;
+  border-radius: 14px;
+  box-shadow: 0 2px 16px #000a;
+  padding: 2rem 1.5rem 1.5rem;
+  animation: slideup 0.5s;
+}
+.container.wide {
+  max-width: 1200px;
+  padding: 2rem;
+}
+
+/* ─── Cards & Buttons ──────────────────────────────────────────────── */
+.playlist-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 1rem;
+}
+
+.playlist-card {
+  background: #181818;
+  border-radius: 8px;
+  overflow: hidden;
+  position: relative;
+  cursor: pointer;
+}
+
+.playlist-card img {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+}
+
+/* Title overlay in footer */
+.playlist-card .title {
+  padding: 0.5rem;
+  font-size: 0.9rem;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Single-download icon button */
+.download-btn {
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+.download-btn svg {
+  width: 1.2rem;
+  height: 1.2rem;
+  fill: #1db954;
+  transition: fill 0.15s;
+}
+.download-btn:hover svg {
+  fill: #169c43;
+}
+
+/* Notch + Dropdown for per-card quality */
+.quality-dropdown {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  z-index: 10;
+}
+
+.quality-dropdown .dropdown-toggle::after {
+  display: none !important;
+}
+
+.notch-btn {
+  width: 1.5rem;
+  height: 1.5rem;
+  padding: 0;
+  background: rgba(0, 0, 0, 0.6);
+  border: none;
+  border-radius: 0.3rem;
+  cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg fill='white' height='16' viewBox='0 0 24 24' width='16' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M19 11H5v2h14v-2z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: center;
+  appearance: none;
+  -webkit-appearance: none;
+}
+.notch-btn:hover {
+  background: rgba(0, 0, 0, 0.8);
+}
+
+.dropdown-menu {
+  min-width: 6rem;
+  background: #222;
+  border-color: #333;
+  border-radius: 0.25rem;
+  padding: 0.25rem 0;
+}
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #eee;
+  padding: 0.25rem 1rem;
+  cursor: pointer;
+}
+.dropdown-item:hover {
+  background: #333;
+}
+.quality-radio {
+  cursor: pointer;
+}
+
+/* Footer containing title + single-download icon */
+.card-footer {
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem;
+}
+
+/* Button styles */
+.btn,
+button,
+input[type="submit"] {
+  background: #222;
+  color: #fff;
+  border: none;
+  border-radius: 7px;
+  padding: 0.5rem 1.1rem;
+  font: inherit;
+  cursor: pointer;
+  transition: background 0.15s;
+  outline: none;
+  margin: 0.2rem 0;
+}
+.btn:hover,
+button:hover,
+input[type="submit"]:hover {
+  background: #333;
+}
+.btn-primary {
+  background: #1db954;
+  color: #fff;
+}
+.btn-primary:hover {
+  background: #169c43;
+}
+.btn-secondary {
+  background: #444;
+  color: #fff;
+}
+
+/* ─── Alerts ───────────────────────────────────────────────────────── */
+.alert {
+  background: #232323;
+  color: #fff;
+  border-left: 4px solid #1db954;
+  border-radius: 7px;
+  padding: .7rem 1rem;
+  margin-bottom: 1rem;
+  font-size: .97rem;
+  opacity: 1;
+  transition: opacity .5s ease;
+}
+
+/* ─── Animations ───────────────────────────────────────────────────── */
+@keyframes fadein {
+  from {opacity:0;} to {opacity:1;}
+}
+@keyframes slideup {
+  from {transform:translateY(40px);opacity:0;}
+  to {transform:translateY(0);opacity:1;}
+}
+
+/* ─── Responsive tweaks ────────────────────────────────────────────── */
+@media (max-width:700px){
+  .layout {flex-direction:column;}
+  .sidebar {
+    flex-direction:row;
+    width:100%;
+    padding:1rem .5rem;
+    border-right:none;
+    border-bottom:1px solid #232323;
+  }
+  .brand {margin-bottom:0;margin-right:1.5rem;}
+  .nav {flex-direction:row;gap:.5rem;margin-left:auto;}
+}
+@media (max-width:600px){
+  .container {padding:1rem .5rem;}
+  .sidebar {width:100vw;}
+}
+@media (max-width:420px){
+  .container {max-width:98vw;}
+}
+
+/* Hero section */
+.hero {
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.hero-title {
+  font-size: 2.25rem;
+  font-weight: 700;
+}
+
+.hero-subtext {
+  font-size: 1rem;
+  color: #ccc;
+}
+
+/* Playlists page styles */
+.quality-select {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+.quality-select label {
+  color: #ccc;
+  font-size: 1rem;
+}
+.quality-select select {
+  background: #222;
+  color: #eee;
+  border: 1px solid #232323;
+  border-radius: 8px;
+  padding: 0.5rem 1rem;
+  font-size: 1rem;
+}
+.playlist-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1.5rem;
+}
+.playlist-card {
+  display: flex;
+  flex-direction: column;
+  background: #181818;
+  border-radius: 8px;
+  overflow: hidden;
+}
+.playlist-card img,
+.playlist-card .no-art {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  border-radius: 8px 8px 0 0;
+  background: #333;
+}
+.card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem;
+  background: #181818;
+  border-radius: 0 0 8px 8px;
+}
+.title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #eee;
+  margin: 0;
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.download-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+.download-btn svg {
+  width: 24px;
+  height: 24px;
+  fill: #1db954;
+}
+
+/* ─── Dark‐mode overrides ─────────────────────────────────── */
+
+/* List items: transparent background, white text, subtle divider */
+.list-group-item {
+  background: transparent !important;
+  border: none !important;
+  border-bottom: 1px solid #2a2a2a !important;
+  color: #eee !important;          /* force white text */
+  display: flex;
+  align-items: center;
+  padding: 0.75rem 1rem;
+}
+
+/* Thumbnail on the left */
+.cover-thumb {
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  object-fit: cover;
+  border-radius: 4px;
+  margin-right: 1rem;
+}
+
+/* Wrapper for track text */
+.track-info {
+  flex: 1;
+}
+.track-info strong {
+  display: block;
+  font-weight: 600;
+  color: #fff;                     /* bright title */
+}
+.track-info small {
+  color: #aaa;                     /* muted artist */
+}
+
+/* Darken form controls (search box & quality select) */
+.form-control, 
+.form-select {
+  background: #181818 !important;
+  color: #eee !important;
+  border: 1px solid #2a2a2a !important;
+}
+
+/* Make the “Download Selected” button stand out */
+.btn-success {
+  background: #1db954;
+  border-color: #1db954;
+}
+
+.pagination {
+  margin: 1rem 0;
+}
+.page-link {
+  background: #181818;
+  color: #eee;
+  border: 1px solid #2a2a2a;
+}
+.page-item.active .page-link {
+  background: #1db954;
+  color: #000;
+  border-color: #1db954;
+}
+.page-item.disabled .page-link {
+  color: #555;
+  pointer-events: none;
+  background: #222;
+}
+
+.track-artist {
+  color: #aaa;
+  font-size: 0.9em;
+}
+
+/* make artist names legible on dark bg */
+.list-group-item small,
+.track-info small {
+  color: #aaa !important;
+}
+
+/* make the Search… placeholder text more visible */
+input::placeholder {
+  color: #aaa !important;
+  opacity: 1; /* some browsers default opacity low */
+}
+
+/* if you only want to target your filterable list input: */
+#search::placeholder {
+  color: #aaa !important;
+  opacity: 1;
+}
+
+/* Ensure both Prev & Next share the same box‐outline */
+.pagination .page-item.previous .page-link,
+.pagination .page-item.next     .page-link {
+  background: transparent;      /* remove pill fill */
+  border: 1px solid #2a2a2a;    /* match the square buttons */
+  border-radius: 4px;           /* match the numbered buttons */
+  color: #eee;                  /* same text color */
+  padding: 0.5rem 1rem;
+  line-height: 1;
+  margin: 0;                    /* no extra spacing */
+}
+
+/* On hover, give them the same hover state as numbers */
+.pagination .page-item.previous .page-link:hover,
+.pagination .page-item.next     .page-link:hover {
+  background: #333;
+}
+
+/* Disabled Prev/Next should just be faded out */
+.pagination .page-item.disabled .page-link {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+/* Fade helper classes */
+.fade-enter {
+  opacity: 0;
+  transition: opacity 300ms ease-in;
+}
+.fade-enter-active {
+  opacity: 1;
+}
+.fade-exit {
+  opacity: 1;
+  transition: opacity 300ms ease-out;
+}
+.fade-exit-active {
+  opacity: 0;
+}
+
+/* Playlist‐card hover “lift” */
+.playlist-card {
+  transition: transform 200ms ease, box-shadow 200ms ease;
+  cursor: pointer;
+}
+.playlist-card:hover {
+  transform: scale(1.03);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+}
+
+/* Selected state */
+.playlist-card.selected {
+  outline: 2px solid #1DB954;
+}
+
+@media (max-width: 600px) {
+  /* Full-width inputs and buttons */
+  #search, #download-form .form-select, #download-form .btn {
+    width: 100% !important;
+  }
+  /* Stack the checkbox under the title */
+  #tracks-list .list-group-item {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+  #tracks-list .list-group-item input[type="checkbox"] {
+    margin-left: 0;
+    align-self: flex-end;
+  }
+}

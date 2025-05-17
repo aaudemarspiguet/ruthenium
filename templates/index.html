@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="hero text-center py-5">
+  <h1 class="hero-title mb-2">ruthenium<sup>44</sup></h1>
+  {% if not logged_in %}
+    <p class="hero-subtext mb-4">
+      shamelessly rip audio from playlists or liked songs and download them as mp3 ;)
+    </p>
+    <a href="{{ url_for('login') }}"
+       class="btn btn-primary btn-lg">
+      connect to spotify
+    </a>
+  {% else %}
+    <p class="hero-subtext">
+      use the menu to select a playlist or your liked songs
+    </p>
+  {% endif %}
+</div>
+
+{% endblock %}
