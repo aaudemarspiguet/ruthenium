@@ -1,5 +1,8 @@
 # ─── Base Image ───────────────────────────────────────────────────────
-FROM python:3.12.10-slim-bookworm
+FROM python:alpine
+
+# Ensure all system packages are up to date to minimize vulnerabilities
+RUN apt-get update && apt-get upgrade -y && apt-get clean
 
 # Upgrade pip and system packages to minimize vulnerabilities
 RUN apt-get update \
