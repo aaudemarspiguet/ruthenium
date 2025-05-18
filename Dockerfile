@@ -16,7 +16,7 @@ ENV PYTHONUNBUFFERED=1 \
     REDIS_URL=redis://redis:6379/0
 
 EXPOSE 8080
-CMD ["gunicorn", "api.index:app", \
+CMD ["gunicorn", "index:app", \
      "--bind=0.0.0.0:8080", \
      "--workers=5", \
      "--threads=4", \

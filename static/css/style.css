@@ -363,9 +363,9 @@ html, body {
 
 /* ─── Alerts ───────────────────────────────────────────────────────── */
 .alert {
-  background: #232323;
-  color: #fff;
-  border-left: 4px solid #1db954;
+  background: #1a2336;
+  color: #dbeafe;
+  border-left: 4px solid #3b82f6;
   border-radius: 7px;
   padding: .7rem 1rem;
   margin-bottom: 1rem;
@@ -636,6 +636,9 @@ html, body {
 }
 .slider-prev {
   left: -3.5rem;
+}
+.slider-prev svg {
+  transform: rotate(180deg);
 }
 .slider-next {
   right: -3.5rem;

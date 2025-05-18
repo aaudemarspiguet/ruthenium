@@ -14,3 +14,4 @@ node_modules/
 tests/
 test/
 *.md
+.docker-compose.yml
