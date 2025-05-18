@@ -135,6 +135,7 @@ def enqueue_download(job_id, refresh_token, kind, idx_list, quality):
         items  = get_playlist_tracks(sp, pl)
         tracks = playlist_tracks_to_tracks(items)
         folder = pl.name
+        
     else:
         all_liked = [item.track for item in list_liked_songs(sp)]
         tracks     = [all_liked[int(i)] for i in idx_list] if idx_list else all_liked
