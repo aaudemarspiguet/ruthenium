@@ -16,7 +16,7 @@ ENV PYTHONUNBUFFERED=1 \
 EXPOSE 8080
 
 CMD ["gunicorn", "index:app", \
-     "--bind=0.0.0.0:8080", \
+     "--bind=0.0.0.0:${PORT}", \
      "--workers=5", \
      "--threads=4", \
      "--timeout=120"]
