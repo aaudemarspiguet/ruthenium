@@ -39,13 +39,16 @@ def songs_downloader(sp: tk.Spotify, folder: str, tracks: list, quality: str = '
                 'preferredquality': quality,
             }],
             'addmetadata': True,
+            
             'logger': None,
-            'cookies_from_browser': 'firefox',
+
             'extractor_args': {
                 'youtube': {
                     'player-client': 'android'
                 }
-            }
+            },
+
+            'cookies': '/etc/secrets/youtube_cookies.txt'
         }
 
         try:

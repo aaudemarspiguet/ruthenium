@@ -1,6 +1,9 @@
 # Docker stuff
 .docker-compose.yml
 
+# Secret files
+youtube_cookies.txt
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
