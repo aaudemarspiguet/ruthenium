@@ -44,11 +44,11 @@ def songs_downloader(sp: tk.Spotify, folder: str, tracks: list, quality: str = '
 
             'extractor_args': {
                 'youtube': {
-                    'player-client': 'android'
+                    'player-client': 'tv'
                 }
             },
 
-            'cookies': '/etc/secrets/youtube_cookies.txt'
+            'cookiefile': '/etc/secrets/youtube_cookies.txt'
         }
 
         try:
