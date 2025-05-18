@@ -1,0 +1,20 @@
+version: '3.8'
+
+services:
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    env_file:
+      - .env
+    depends_on:
+      - redis
+    # override the default CMD if you need to tweak Gunicorn args:
+    # command: sh -c "gunicorn api.index:app --bind 0.0.0.0:8080 --workers 5 --threads 4 --timeout 120"

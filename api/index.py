@@ -1,7 +1,7 @@
 # ─── Imports ───────────────────────────────────────────────────
 from flask import (
-    Flask, render_template, send_from_directory, session, redirect, request,
-    url_for, flash, send_file
+    Flask, render_template, send_from_directory, session,
+    redirect, request, url_for, flash, send_file
 )
 from spotify import (
     list_playlists,
@@ -18,35 +18,37 @@ import uuid
 import zipfile
 from math import ceil
 import shutil
-import tempfile
 from pathvalidate import sanitize_filename
+import redis
 
-# ─── Flask app setup ──────────────────────────────────────────────
+# ─── flask config ──────────────────────────────────────────────
 load_dotenv()
 app = Flask(__name__)
 app.secret_key = os.getenv('FLASK_SECRET')
 
+# ─── download directory ─────────────────────────────────────────────
 BASE_DOWNLOAD_DIR = os.path.join(app.root_path, 'downloaded')
 os.makedirs(BASE_DOWNLOAD_DIR, exist_ok=True)
 
-jobs = {}  # job_id -> { status: 'queued'|'downloading'|'zipping'|'done' }
+# ─── redis client ───────────────────────────────────────────────────
+REDIS_URL = os.getenv('REDIS_URL', 'redis://localhost:6379/0')
+r = redis.Redis.from_url(REDIS_URL, decode_responses=True)
 
+# ─── spotify credentials ────────────────────────────────────────────
 CLIENT_ID     = os.getenv('CLIENT_ID')
 CLIENT_SECRET = os.getenv('CLIENT_SECRET')
 CALLBACK_URI  = os.getenv('CALLBACK_URI')
-
-# Tekore will handle token  for us
 cred = tk.Credentials(CLIENT_ID, CLIENT_SECRET, CALLBACK_URI)
 
-# ─── Make `logged_in` available in every template ──────────────────
+# ─── make `logged_in` available in every template ──────────────────
 @app.context_processor
 def inject_login():
     return dict(logged_in=('refresh_token' in session))
 
-# ─── In-memory cache/globals ──────────────────────────────────────
-_liked_cache       = []            # will hold Track objects
-_liked_cache_lock  = threading.Lock()
-_cache_warming     = False
+# ─── prefetch songs in cache and load in background ───────────────
+_liked_cache      = []
+_liked_cache_lock = threading.Lock()
+_cache_warming    = False
 
 def _warm_liked_cache(sp, total_pages):
     """
@@ -54,7 +56,7 @@ def _warm_liked_cache(sp, total_pages):
     """
     global _liked_cache, _cache_warming
     per_page = 10
-    max_page = min(total_pages, 6)   # pages 1–6 total
+    max_page = min(total_pages, 6)
     for p in range(2, max_page + 1):
         offset = (p - 1) * per_page
         results = sp.saved_tracks(limit=per_page, offset=offset)
@@ -63,96 +65,114 @@ def _warm_liked_cache(sp, total_pages):
             _liked_cache.extend(batch)
     _cache_warming = False
 
-# ─── Helpers ──────────────────────────────────────────────────────
+# ─── Helpers ───────────────────────────────────────────────────────
 def ensure_token():
     if 'refresh_token' not in session:
         return redirect(url_for('login'))
     return None
 
 def get_spotify():
-    refresh = session.get('refresh_token')
-    if not refresh:
-        return None
-    # Exchange the saved refresh_token for a fresh Token
-    token = cred.refresh_user_token(refresh)
-    # Build a standard (sync) Spotify client with that token
-    return tk.Spotify(token)
-
-def get_spotify():
+    """
+    Exchange the saved refresh_token for a fresh Spotify client.
+    """
     refresh = session.get('refresh_token')
     if not refresh:
         return None
     token = cred.refresh_user_token(refresh)
-    # Store the new refresh_token back in case it rotated
     session['refresh_token'] = token.refresh_token
     return tk.Spotify(token)
 
+# ─── Worker functions ──────────────────────────────────────────────
 def download_and_zip(job_id, sp, download_path, tracks, quality):
-    base_dir    = os.path.dirname(download_path)    # "downloaded"
-    folder_name = os.path.basename(download_path)   # e.g. "My Playlist"
+    """
+    Download all `tracks` into download_path, zip them to BASE_DOWNLOAD_DIR,
+    and update job status in Redis at each step.
+    """
+    folder_name = os.path.basename(download_path)
+    zip_fname   = f"{folder_name}.zip"
+    zip_path    = os.path.join(BASE_DOWNLOAD_DIR, zip_fname)
 
-    # 1) Download
-    jobs[job_id]['status'] = 'downloading'
+    # Download phase
+    r.hset(f"job:{job_id}", 'status', 'downloading')
     for track in tracks:
-        if jobs[job_id].get('cancelled'):
-            jobs[job_id]['status'] = 'cancelled'
+        if r.hget(f"job:{job_id}", 'status') == 'cancelled':
+            r.hset(f"job:{job_id}", 'status', 'cancelled')
             return
-        songs_downloader(sp, download_path, [track], quality)  # Pass quality here!
+        songs_downloader(sp, download_path, [track], quality)
 
-    # 2) Zip
-    jobs[job_id]['status'] = 'zipping'
-    zip_path = os.path.join(base_dir, f"{folder_name}.zip")
+    # Zipping phase
+    r.hset(f"job:{job_id}", 'status', 'zipping')
     with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zf:
         for root, _, files in os.walk(download_path):
             for fname in files:
                 full = os.path.join(root, fname)
-                arc  = os.path.relpath(full, start=base_dir)
+                arc  = os.path.join(folder_name, fname)
                 zf.write(full, arc)
 
-    # 3) Mark done and hand back the zip path
-    jobs[job_id]['status']   = 'done'
-    jobs[job_id]['zip_path'] = zip_path
+    # Done
+    r.hset(f"job:{job_id}", mapping={'status': 'done', 'zip_path': zip_path})
 
-    # 4) Schedule cleanup of both folder and zip after 5 minutes
+    # Cleanup after 2 minutes
     def _cleanup():
-        try:
-            shutil.rmtree(download_path)
-        except Exception:
-            pass
+        shutil.rmtree(download_path, ignore_errors=True)
         try:
             os.remove(zip_path)
-        except Exception:
+        except OSError:
             pass
-
-    # 120 sec = 2 min grace period
+        r.delete(f"job:{job_id}")
     threading.Timer(120, _cleanup).start()
 
-# ─── Routes ───────────────────────────────────────────────────────
+
+def enqueue_download(job_id, refresh_token, kind, idx_list, quality):
+    """
+    Rehydrate a Spotify client, resolve tracks/folder, then run download_and_zip.
+    """
+    token = cred.refresh_user_token(refresh_token)
+    sp    = tk.Spotify(token)
+
+    if kind == 'playlist':
+        pl     = list_playlists(sp)[int(idx_list[0])]
+        items  = get_playlist_tracks(sp, pl)
+        tracks = playlist_tracks_to_tracks(items)
+        folder = pl.name
+    else:
+        all_liked = [item.track for item in list_liked_songs(sp)]
+        tracks     = [all_liked[int(i)] for i in idx_list] if idx_list else all_liked
+        folder     = "Liked Songs"
+
+    # Prepare and update status
+    r.hset(f"job:{job_id}", 'status', 'downloading')
+    download_path = os.path.join(
+        BASE_DOWNLOAD_DIR,
+        f"{job_id}_{sanitize_filename(folder)}"
+    )
+    os.makedirs(download_path, exist_ok=True)
+
+    download_and_zip(job_id, sp, download_path, tracks, quality)
+
+# ─── App Routes ────────────────────────────────────────────────────────
 @app.route('/')
 def index():
     return render_template('index.html')
 
 @app.route('/login')
 def login():
-    # Redirect user to Spotify’s consent page
     auth_url = cred.user_authorisation_url(
         scope=tk.scope.every,
         show_dialog=True,
-        state=None  # you can pass a CSRF token here
+        state=None
     )
     return redirect(auth_url)
 
 @app.route('/callback')
 def callback():
-    code = request.args.get('code')
+    code  = request.args.get('code')
     error = request.args.get('error')
     if error or not code:
         flash('Spotify authorization failed', 'danger')
         return redirect(url_for('index'))
 
-    # Exchange code for a token + refresh token
     token = cred.request_user_token(code)
-    # Store *that user’s* refresh_token in *their* session
     session['refresh_token'] = token.refresh_token
     flash('Logged in successfully!', 'success')
     return redirect(url_for('playlists'))
@@ -167,27 +187,22 @@ def logout():
 def playlists():
     if redirect_to := ensure_token():
         return redirect_to
-
     sp   = get_spotify()
     user = sp.current_user()
 
-    # 1) read `page` query param or default to 1
-    page     = int(request.args.get('page', 1))
-    per_page =  fifteen = 15 
-    offset   = (page - 1) * per_page
+    page, per_page = int(request.args.get('page', 1)), 15
+    offset = (page - 1) * per_page
 
-    # 2) fetch exactly this slice
     results     = sp.playlists(user.id, limit=per_page, offset=offset)
     page_items  = results.items
     total       = results.total
     total_pages = ceil(total / per_page)
 
-    # 3) render with pagination variables
     return render_template(
-      'playlists.html',
-      playlists=page_items,
-      page=page,
-      total_pages=total_pages
+        'playlists.html',
+        playlists=page_items,
+        page=page,
+        total_pages=total_pages
     )
 
 @app.route('/liked')
@@ -195,17 +210,15 @@ def liked():
     if redirect_to := ensure_token():
         return redirect_to
 
-    sp        = get_spotify()
-    page      = int(request.args.get('page', 1))
-    per_page  = 10
-    query     = request.args.get('search', '').strip().lower()
+    sp       = get_spotify()
+    page     = int(request.args.get('page', 1))
+    per_page = 10
+    query    = request.args.get('search', '').strip().lower()
 
-    # If there's a search, fetch *all* saved tracks synchronously
     if query:
+        # full synchronous search
         all_tracks = []
         limit, offset = 50, 0
-
-        # load every batch
         while True:
             results = sp.saved_tracks(limit=limit, offset=offset)
             batch   = [item.track for item in results.items]
@@ -214,27 +227,33 @@ def liked():
                 break
             offset += limit
 
-        # filter on name or any artist
-        filtered = [
-            t for t in all_tracks
-            if query in t.name.lower()
-               or any(query in a.name.lower() for a in t.artists)
-        ]
-
+        filtered    = [t for t in all_tracks
+                         if query in t.name.lower()
+                         or any(query in a.name.lower() for a in t.artists)]
         total       = len(filtered)
         total_pages = ceil(total / per_page)
         start, end  = (page-1)*per_page, (page-1)*per_page + per_page
         page_items  = filtered[start:end]
-
     else:
-        # No search: fast first‐page + background prefetch as before
+        # fast first page + background cache warming
         offset     = (page - 1) * per_page
         results    = sp.saved_tracks(limit=per_page, offset=offset)
         page_items = [item.track for item in results.items]
         total      = results.total
         total_pages = ceil(total / per_page)
 
-        # seed & warm cache here (omitted for brevity)
+        # seed & warm cache
+        with _liked_cache_lock:
+            _liked_cache.clear()
+            _liked_cache.extend(page_items)
+        global _cache_warming
+        if not _cache_warming:
+            _cache_warming = True
+            threading.Thread(
+                target=_warm_liked_cache,
+                args=(sp, total_pages),
+                daemon=True
+            ).start()
 
     return render_template(
         'download.html',
@@ -246,87 +265,57 @@ def liked():
 
 @app.route('/download', methods=['POST'])
 def do_download():
-    # 0) Ensure we have a valid Spotify token
     if redirect_to := ensure_token():
         return redirect_to
 
-    sp   = get_spotify()
-    kind = request.form['kind']
+    refresh_token = session['refresh_token']
+    kind          = request.form['kind']
+    idx_list      = request.form.getlist('idx')
+    quality       = request.form.get('quality', '320')
+    job_id        = str(uuid.uuid4())
 
-    # 1) Figure out which tracks to download and what folder name to use
-    if kind == 'playlist':
-        idx        = int(request.form['idx'][0])
-        pl         = list_playlists(sp)[idx]
-        items      = get_playlist_tracks(sp, pl)
-        tracks     = playlist_tracks_to_tracks(items)
-        folder_name = pl.name
-    else:
-        all_liked  = [item.track for item in list_liked_songs(sp)]
-        idx_list   = request.form.getlist('idx')
-        if idx_list:
-            tracks = [all_liked[int(i)] for i in idx_list]
-        else:
-            tracks = all_liked
-        folder_name = "Liked Songs"
-
-    # 2) Bail out if there’s nothing to do
-    if not tracks:
-        flash("No tracks found to download.", "warning")
-        return redirect(url_for('playlists'))
-
-    # 3) Pick quality
-    quality = request.form.get('quality', '320')
-
-    # 4) Prepare a unique job
-    job_id = str(uuid.uuid4())
-    jobs[job_id] = {'status': 'queued'}
-
-    # 5) Make a download folder for this job
-    download_path = os.path.join(BASE_DOWNLOAD_DIR, f"{job_id}_{sanitize_filename(folder_name)}")
-    os.makedirs(download_path, exist_ok=True)
-
-    # 6) Fire off the background worker
+    # enqueue job
+    r.hset(f"job:{job_id}", mapping={'status': 'queued'})
     threading.Thread(
-        target=download_and_zip,
-        args=(job_id, sp, download_path, tracks, quality),
+        target=enqueue_download,
+        args=(job_id, refresh_token, kind, idx_list, quality),
         daemon=True
     ).start()
 
-    # 7) Immediately redirect to the status page
     return redirect(url_for('status_page', job_id=job_id))
 
 @app.route('/status/<job_id>')
 def status_page(job_id):
-    if job_id not in jobs:
+    if not r.exists(f"job:{job_id}"):
         flash("Unknown download job.", "danger")
         return redirect(url_for('index'))
     return render_template('status.html', job_id=job_id)
 
 @app.route('/status/<job_id>/json')
 def status_json(job_id):
-    job = jobs.get(job_id)
-    if not job:
+    data = r.hgetall(f"job:{job_id}")
+    if not data:
         return {"error": "not found"}, 404
-    return {"status": job['status']}
+    return {"status": data.get("status", "")}
 
 @app.route('/download/<job_id>')
 def download_zip(job_id):
-    job = jobs.get(job_id)
-    if not job or job.get('status') != 'done':
+    data = r.hgetall(f"job:{job_id}")
+    if data.get("status") != 'done':
         flash("Your download isn’t ready yet. Please wait.", "warning")
         return redirect(url_for('status_page', job_id=job_id))
 
+    zip_path = data.get('zip_path')
     return send_file(
-        job['zip_path'],
+        zip_path,
         as_attachment=True,
-        download_name=os.path.basename(job['zip_path'])
+        download_name=os.path.basename(zip_path)
     )
 
 @app.route('/cancel/<job_id>', methods=['POST'])
 def cancel_job(job_id):
-    job = jobs.get(job_id)
-    if job and job.get('status') not in ('done', 'cancelled'):
-        job['cancelled'] = True
+    if r.exists(f"job:{job_id}") and r.hget(f"job:{job_id}", 'status') not in ('done','cancelled'):
+        r.hset(f"job:{job_id}", 'status', 'cancelled')
         flash("Download cancelled.", "info")
     return redirect(url_for('playlists'))
 

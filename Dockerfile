@@ -1,25 +1,23 @@
-# ─── Base Image ───────────────────────────────────────────────────────
 FROM python:3.13-slim-bookworm
 
-# ─── Install FFmpeg (which includes ffprobe on Bookworm) ──────────────
 RUN apt-get update \
  && apt-get install -y --no-install-recommends \
-      ffmpeg \
+    ffmpeg \
  && rm -rf /var/lib/apt/lists/*
 
-# ─── App Directory & Python Dependencies ─────────────────────────────
 WORKDIR /app
 COPY requirements.txt ./
-RUN pip install --no-cache-dir -r requirements.txt
+RUN --mount=type=cache,target=/root/.cache/pip pip install --no-cache-dir -r requirements.txt
 
-# ─── Copy Your Code ──────────────────────────────────────────────────
 COPY . .
 
-# ─── Environment ─────────────────────────────────────────────────────
-ENV PYTHONUNBUFFERED=1
-ENV PORT=8080
-# ─── Sanity Check (optional; you can remove this after confirming) ────
-RUN which ffmpeg && ffmpeg -version && which ffprobe && ffprobe -version
+ENV PYTHONUNBUFFERED=1 \
+    PORT=8080 \
+    REDIS_URL=redis://redis:6379/0
 
-# ─── Run with Gunicorn ────────────────────────────────────────────────
-CMD ["gunicorn", "api.index:app", "--bind", "0.0.0.0:8080", "--workers", "1", "--threads", "4", "--timeout", "120"]
+EXPOSE 8080
+CMD ["gunicorn", "api.index:app", \
+     "--bind=0.0.0.0:8080", \
+     "--workers=5", \
+     "--threads=4", \
+     "--timeout=120"]
