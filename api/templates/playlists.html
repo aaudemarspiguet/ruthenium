@@ -1,150 +1,85 @@
 {% extends "base.html" %}
-{% import "_macros.html" as macros %}
+  {% import "_macros.html" as macros %}
 
-{% block content %}
-  <div class="d-flex justify-content-between align-items-center mb-4">
-    <h2>your playlists</h2>
-    <button id="multi-toggle" class="btn btn-outline-secondary">
-      download multiple
-    </button>
-  </div>
+  {% block content %}
+    <div class="d-flex flex-wrap align-items-center mb-4 gap-3">
+      <h2 class="mb-0">your playlists</h2>
+      <form id="multi-actions"
+            method="post"
+            action="{{ url_for('do_download') }}"
+            class="d-flex flex-wrap align-items-center gap-2 ms-auto">
+        <input type="hidden" name="kind" value="playlist">
+        <input type="hidden" name="quality" id="multi-quality-input" value="320">
+        <label for="global-quality" class="me-2" style="color:#ccc;">quality:</label>
+        <select id="global-quality" class="form-select form-select-sm" style="width:auto;max-width:90px;">
+          <option value="320" selected>320 kbps</option>
+          <option value="190">190 kbps</option>
+        </select>
+        <button type="submit" class="btn btn-success d-flex align-items-center">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" style="width:1.3em;height:1.3em;fill:#fff;margin-right:0.5em;"><path d="M5 18h14v-2H5v2zM12 15l-4-4h3v-5h2v5h3l-4 4z"/></svg>
+          download selected
+        </button>
+      </form>
+    </div>
 
-  <form id="multi-actions"
-        method="post"
-        action="{{ url_for('do_download') }}"
-        class="d-flex align-items-center mb-4 d-none">
-    <input type="hidden" name="kind" value="playlist">
-    {{ macros.quality_select() }}
-    <button type="submit" class="btn btn-success ms-3">download selected</button>
-    <button type="button" id="multi-cancel" class="btn btn-danger ms-2">cancel</button>
-  </form>
-
-  <div class="playlist-grid">
-    {% for pl in playlists %}
-      <div class="playlist-card position-relative">
-        {% if pl.images %}
-          <img src="{{ pl.images[0].url }}" alt="{{ pl.name }} cover">
-        {% else %}
-          <div class="no-art"></div>
-        {% endif %}
-
-        <div class="quality-dropdown dropdown">
-          <button class="notch-btn dropdown-toggle"
-                  type="button"
-                  id="qualityMenu{{ loop.index0 }}"
-                  data-bs-toggle="dropdown"
-                  aria-expanded="false"></button>
-          <ul class="dropdown-menu dropdown-menu-end"
-              aria-labelledby="qualityMenu{{ loop.index0 }}">
-            <li>
-              <label class="dropdown-item mb-0">
-                <input type="radio"
-                       name="quality-{{ loop.index0 }}"
-                       value="320"
-                       class="me-2 quality-radio"
-                       checked>
-                320 kbps
-              </label>
-            </li>
-            <li>
-              <label class="dropdown-item mb-0">
-                <input type="radio"
-                       name="quality-{{ loop.index0 }}"
-                       value="190"
-                       class="me-2 quality-radio">
-                190 kbps
-              </label>
-            </li>
-          </ul>
+    <div class="slider-outer-wrapper position-relative" style="width:100%;">
+      <button class="slider-prev" type="button" aria-label="Scroll left" tabindex="0"></button>
+      <div class="slider-wrapper" style="width:100%;">
+        <div class="playlist-slider" id="playlist-slider">
+          {% for page in playlists|batch(10, none) %}
+            <div class="playlist-page">
+              {% for pl in page if pl %}
+                {{ macros.playlist_card(pl, loop.index0) }}
+              {% endfor %}
+            </div>
+          {% endfor %}
         </div>
-
-        <div class="card-footer d-flex justify-content-between align-items-center">
-          <span class="title">{{ pl.name }}</span>
-
-          <form method="post" action="{{ url_for('do_download') }}" class="m-0 p-0">
-            <input type="hidden" name="kind" value="playlist">
-            <input type="hidden" name="idx" value="{{ loop.index0 }}">
-            <input type="hidden" name="quality" class="card-quality-input" value="320">
-            <button type="submit" class="download-btn" title="Download {{ pl.name }}">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-                <path d="M5 18h14v-2H5v2zM12 15l-4-4h3v-5h2v5h3l-4 4z"/>
-              </svg>
-            </button>
-          </form>
-        </div>
-
-        <input type="checkbox"
-               name="idx"
-               form="multi-actions"
-               value="{{ loop.index0 }}"
-               class="multi-checkbox position-absolute top-0 start-0 m-2 d-none">
       </div>
-    {% endfor %}
-  </div>
+      <button class="slider-next" type="button" aria-label="Scroll right" tabindex="0"></button>
+    </div>
+  {% endblock %}
 
-  {{ macros.paginate(page, total_pages, 'playlists') }}
-{% endblock %}
+  {% block scripts %}
+    {{ super() }}
+    <script>
+      document.addEventListener('DOMContentLoaded', () => {
+        // sync global quality selector
+        const globalQuality = document.getElementById('global-quality');
+        const multiQuality  = document.getElementById('multi-quality-input');
+        if (globalQuality && multiQuality) {
+          globalQuality.addEventListener('change', () => {
+            multiQuality.value = globalQuality.value;
+          });
+        }
 
-{% block scripts %}
-  {{ super() }}
-  <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      const toggleBtn   = document.getElementById('multi-toggle');
-      const actionsForm = document.getElementById('multi-actions');
-      const cancelBtn   = document.getElementById('multi-cancel');
-      const checkboxes  = document.querySelectorAll('.multi-checkbox');
-      const notches     = document.querySelectorAll('.quality-dropdown');
-      const downloadBtns = document.querySelectorAll('.download-btn');
+        // slider scroll logic
+        const slider = document.getElementById('playlist-slider');
+        const prevBtn = document.querySelector('.slider-prev');
+        const nextBtn = document.querySelector('.slider-next');
+        const isMobile = () => window.matchMedia('(max-width:700px)').matches;
+        const updateButtons = () => {
+          const disabled = isMobile();
+          [prevBtn, nextBtn].forEach(btn => {
+            btn.setAttribute('aria-disabled', disabled);
+            btn.tabIndex = disabled ? -1 : 0;
+          });
+        };
+        updateButtons();
+        window.addEventListener('resize', updateButtons);
+        if (slider && prevBtn && nextBtn) {
+          nextBtn.onclick = () => !isMobile() && slider.scrollBy({ left: slider.clientWidth, behavior: 'smooth' });
+          prevBtn.onclick = () => !isMobile() && slider.scrollBy({ left: -slider.clientWidth, behavior: 'smooth' });
+        }
 
-
-      toggleBtn.addEventListener('click', () => {
-        toggleBtn.classList.add('d-none');
-        actionsForm.classList.remove('d-none');
-        notches.forEach(n => n.classList.add('d-none'));
-        checkboxes.forEach(cb => cb.classList.remove('d-none'));
-        downloadBtns.forEach(btn => btn.style.display = 'none');
-      });
-
-      cancelBtn.addEventListener('click', () => {
-        actionsForm.classList.add('d-none');
-        toggleBtn.classList.remove('d-none');
-        notches.forEach(n => n.classList.remove('d-none'));
-        checkboxes.forEach(cb => {
-          cb.checked = false;
-          cb.classList.add('d-none');
-        });
-        downloadBtns.forEach(btn => btn.style.display = '');
-      });
-
-      document.querySelectorAll('.quality-dropdown').forEach(drop => {
-        const idx    = drop.querySelector('.notch-btn').id.replace('qualityMenu','');
-        const card   = drop.closest('.playlist-card');
-        const input  = card.querySelector('.card-quality-input');
-        drop.querySelectorAll('.quality-radio').forEach(radio => {
-          radio.addEventListener('change', e => {
-            input.value = e.target.value;
+        // selection wrapper, checkbox, .selected toggle
+        document.querySelectorAll('.playlist-card-wrapper').forEach(wrapper => {
+          const cb   = wrapper.querySelector('.playlist-select-input');
+          const card = wrapper.querySelector('.playlist-card');
+          wrapper.addEventListener('click', () => {
+            cb.checked = !cb.checked;
+            card.classList.toggle('selected', cb.checked);
           });
         });
       });
-    });
-  </script>
-
-  <script>
-  document.querySelectorAll('.playlist-card').forEach(card => {
-    // each card has a hidden checkbox (multi-mode) or hidden quality+idx form
-    const checkbox = card.querySelector('input[type="checkbox"]')
-                   || card.querySelector('input[name="idx"][type="hidden"]');
-
-    card.addEventListener('click', e => {
-      // skip clicks on the single-download button or notch
-      if (e.target.closest('button, .notch-btn, a')) return;
-
-      // toggle selected class & underlying checkbox
-      card.classList.toggle('selected');
-      if (checkbox) {
-        checkbox.checked = !checkbox.checked;
-      }
-    });
-  });
-</script>
-{% endblock %}
+    </script>
+  {% endblock %}

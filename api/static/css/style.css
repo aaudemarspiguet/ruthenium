@@ -1,46 +1,178 @@
 /* ─── Layout & Theme ─────────────────────────────────────────────────── */
+:root {
+  --bg: #18191a;
+  --bg-hover: #23272b;
+  --text: #e6f1ff;
+  --accent: #40C057;
+}
+
+body, html {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Orbitron', 'Inter', 'Segoe UI', system-ui, Arial, sans-serif;
+  font-size: 15px;
+}
+
 html, body {
   height: 100%;
   margin: 0;
   padding: 0;
-  background: #111;
-  color: #eee;
-  font-family: 'Inter', 'Segoe UI', system-ui, Arial, sans-serif;
-  font-size: 15px;
   min-height: 100vh;
 }
 .layout { display: flex; min-height: 100vh; }
 .sidebar {
   width: 170px;
-  background: #181818;
-  display: flex; flex-direction: column; align-items: flex-start;
-  padding: 2rem 1rem 1rem 1rem;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 3.5rem 1rem 2.5rem 1rem;
   border-right: 1px solid #232323;
   box-sizing: border-box;
 }
 .brand {
+  font-family: 'Orbitron', 'Inter', 'Segoe UI', system-ui, Arial, sans-serif;
   font-size: 1.25rem;
   font-weight: 700;
-  margin-bottom: 2.5rem;
+  margin-bottom: 2.8rem;
+  margin-top: 0.5rem;
+  display: block;
+  text-align: center;
   letter-spacing: 0.5px;
   color: #1db954;
   text-shadow: 0 2px 8px #0006;
   text-transform: lowercase;
 }
 .nav {
-  display: flex; flex-direction: column; gap: 0.5rem; width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+  width: 100%;
+  align-items: center;
+  margin-bottom: 2.5rem;
 }
-.nav a {
-  display: block; width: 100%; text-align: left;
-  background: #232323; color: #eee; border: none; border-radius: 7px;
-  padding: 0.55rem 0.9rem; font: inherit; cursor: pointer;
-  transition: background .15s, color .15s; outline: none;
-  text-decoration: none!important; text-transform: lowercase;
+.nav a, .nav button, .nav .btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  background: transparent;
+  color: var(--text);
+  border: none;
+  border-radius: 8px;
+  padding: 0.7rem 0.9rem;
+  font: inherit;
+  cursor: pointer;
+  text-align: center;
+  text-decoration: none !important;
+  text-transform: lowercase;
+  position: relative;
+  transition: background 150ms, color 150ms, box-shadow 150ms, transform 150ms;
+  box-shadow: none;
 }
-.nav a.active,
-.nav a:focus,
-.nav a:hover {
-  background: #1db954; color: #fff;
+.nav a.active {
+  background: var(--bg-hover);
+  color: var(--accent);
+  box-shadow: 0 0 8px 0 var(--accent), 0 0 1px 0 var(--accent);
+}
+.nav a.active::before {
+  content: '';
+  position: absolute;
+  left: -8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 4px;
+  height: 60%;
+  border-radius: 4px;
+  background: var(--accent);
+  box-shadow: 0 0 8px 2px var(--accent);
+}
+.nav a:not(.active):hover, .nav .btn:not(.active):hover, .nav button:not(.active):hover {
+  background: var(--bg-hover);
+  color: #fff;
+  box-shadow: 0 0 8px 0 var(--accent), 0 0 16px 0 var(--accent);
+  transform: translateX(2px);
+}
+.nav a, .nav .btn, .nav button {
+  outline: none;
+}
+.nav img {
+  display: block;
+  margin: 0 auto 1.5rem auto;
+}
+.btn-secondary, .nav .btn-secondary, .nav button.btn-secondary {
+  background: transparent;
+  color: #888;
+  border: none;
+  font-weight: 400;
+  opacity: 0.7;
+  box-shadow: none;
+  transition: color 150ms, box-shadow 150ms, opacity 150ms, background 150ms;
+}
+.btn-secondary:hover, .nav .btn-secondary:hover, .nav button.btn-secondary:hover {
+  color: var(--accent);
+  opacity: 1;
+  box-shadow: 0 0 8px 0 var(--accent), 0 0 16px 0 var(--accent);
+  background: var(--bg-hover);
+}
+
+/* MOBILE HEADER */
+.mobile-header {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: 3rem;
+  background: var(--bg);
+  z-index: 1050;
+}
+.btn-hamburger {
+  background: none;
+  border: none;
+  color: var(--text);
+  font-size: 1.5rem;
+}
+.mobile-brand {
+  color: var(--text);
+  font-size: 1.25rem;
+}
+
+/* PUSH DOWN main-content under the header on mobile */
+@media (max-width: 991px) {
+  .main-content {
+    padding-top: 3.5rem;
+  }
+}
+
+/* FOOTER */
+.site-footer {
+  background: var(--bg-hover);
+  color: #888;
+}
+.site-footer a {
+  color: #888; text-decoration: none;
+}
+.site-footer a:hover {
+  color: var(--accent);
+}
+
+/* hide mobile-footer on desktop, show only on mobile */
+.mobile-footer {
+  display: none;
+}
+@media (max-width: 991px) {
+  .mobile-footer {
+    display: flex;
+    justify-content: center;
+    padding: 1rem 0;
+    background: var(--bg);
+  }
+  .mobile-footer a {
+    color: #888;
+    font-size: 0.85rem;
+    text-decoration: none;
+  }
+  .mobile-footer a:hover {
+    color: var(--accent);
+  }
 }
 
 /* ─── Main content & Containers ─────────────────────────────────────── */
@@ -60,152 +192,164 @@ html, body {
   box-shadow: 0 2px 16px #000a;
   padding: 2rem 1.5rem 1.5rem;
   animation: slideup 0.5s;
+  /* Use CSS custom property for margin-bottom to match margin-top */
+  --container-margin-top: 40px;
+  margin-top: var(--container-margin-top);
+  margin-bottom: var(--container-margin-top);
 }
 .container.wide {
   max-width: 1200px;
   padding: 2rem;
+  /* Use same variable for wide containers */
+  margin-bottom: var(--container-margin-top);
 }
 
 /* ─── Cards & Buttons ──────────────────────────────────────────────── */
 .playlist-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-  gap: 1rem;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); /* slightly larger min width */
+  gap: 0.65rem; /* reduced gap for denser layout */
 }
 
 .playlist-card {
+  font-family: 'Orbitron', 'Inter', 'Segoe UI', system-ui, Arial, sans-serif !important;
   background: #181818;
-  border-radius: 8px;
+  border-radius: 10px;
   overflow: hidden;
   position: relative;
   cursor: pointer;
-}
-
-.playlist-card img {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
   width: 100%;
-  aspect-ratio: 1;
-  object-fit: cover;
+  max-width: 200px; /* slightly increased max width */
+  height: 240px;    /* slightly increased height */
+  transition: transform 200ms ease, box-shadow 200ms ease, outline 150ms, background 150ms, border 150ms;
+  border: 2px solid transparent;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.18);
 }
-
-/* Title overlay in footer */
+.playlist-card:hover {
+  background: #23272b;
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+  transform: translateY(-2px);
+}
+.playlist-card.selected {
+  border: 2.5px solid #40C057;
+  box-shadow: 0 8px 28px 0 #40C05755, 0 0 0 4px #40C05733;
+  background: #202f1d;
+  transform: translateY(-2px) scale(1.035);
+  z-index: 2;
+}
+.playlist-card img,
+.playlist-card .no-art {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  border-radius: 10px 10px 0 0;
+  background: #333;
+  display: block;
+}
 .playlist-card .title {
-  padding: 0.5rem;
-  font-size: 0.9rem;
-  text-align: center;
+  padding: 0.4rem 0.3rem 0.2rem 0.3rem;
+  font-size: 0.93rem;
+  font-weight: 400;
+  min-height: 2.2em;
+  height: 2.2em;
+  width: 100%;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  color: #e6f1ff;
+  font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
+  letter-spacing: 0.01em;
+  line-height: 1.2;
+  margin: 0 auto;
 }
-
-/* Single-download icon button */
-.download-btn {
-  background: transparent;
-  border: none;
-  padding: 0;
-  cursor: pointer;
-}
-.download-btn svg {
-  width: 1.2rem;
-  height: 1.2rem;
-  fill: #1db954;
-  transition: fill 0.15s;
-}
-.download-btn:hover svg {
-  fill: #169c43;
-}
-
-/* Notch + Dropdown for per-card quality */
-.quality-dropdown {
-  position: absolute;
-  top: 0.5rem;
-  right: 0.5rem;
-  z-index: 10;
-}
-
-.quality-dropdown .dropdown-toggle::after {
-  display: none !important;
-}
-
-.notch-btn {
-  width: 1.5rem;
-  height: 1.5rem;
-  padding: 0;
-  background: rgba(0, 0, 0, 0.6);
-  border: none;
-  border-radius: 0.3rem;
-  cursor: pointer;
-  background-image: url("data:image/svg+xml,%3Csvg fill='white' height='16' viewBox='0 0 24 24' width='16' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M19 11H5v2h14v-2z'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: center;
-  appearance: none;
-  -webkit-appearance: none;
-}
-.notch-btn:hover {
-  background: rgba(0, 0, 0, 0.8);
-}
-
-.dropdown-menu {
-  min-width: 6rem;
-  background: #222;
-  border-color: #333;
-  border-radius: 0.25rem;
-  padding: 0.25rem 0;
-}
-.dropdown-item {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  color: #eee;
-  padding: 0.25rem 1rem;
-  cursor: pointer;
-}
-.dropdown-item:hover {
-  background: #333;
-}
-.quality-radio {
-  cursor: pointer;
-}
-
-/* Footer containing title + single-download icon */
 .card-footer {
-  background: rgba(0, 0, 0, 0.5);
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0.5rem;
+  padding: 0.4rem 0.5rem 0.3rem 0.5rem; /* reduced bottom padding */
+  background: #181818;
+  border-radius: 0 0 10px 10px;
 }
 
-/* Button styles */
-.btn,
-button,
-input[type="submit"] {
-  background: #222;
-  color: #fff;
-  border: none;
-  border-radius: 7px;
-  padding: 0.5rem 1.1rem;
-  font: inherit;
-  cursor: pointer;
-  transition: background 0.15s;
-  outline: none;
-  margin: 0.2rem 0;
+.playlist-card-wrapper {
+  display: inline-block;   /* so the wrapper shrink-wraps the card */
+  cursor: pointer;         /* show it’s clickable */
 }
-.btn:hover,
-button:hover,
-input[type="submit"]:hover {
-  background: #333;
+
+.playlist-select-input {
+  display: none;           /* hide the checkbox itself */
 }
-.btn-primary {
-  background: #1db954;
-  color: #fff;
+
+/* Responsive grid tweaks for desktop */
+@media (min-width: 1200px) {
+  .playlist-grid {
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 0.55rem;
+  }
+  .playlist-card {
+    max-width: 210px;
+    height: 250px;
+  }
 }
-.btn-primary:hover {
-  background: #169c43;
+
+/* Responsive tweaks for mobile */
+@media (max-width: 900px) {
+  .playlist-grid {
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 0.5rem;
+  }
+  .playlist-card {
+    max-width: 98vw;
+    height: auto;
+  }
 }
-.btn-secondary {
-  background: #444;
-  color: #fff;
+
+/* ─── Slider page grid override ───────────────────────────────────── */
+.playlist-page {
+  flex: 0 0 100%;            /* Each page always takes 100% of slider width */
+  scroll-snap-align: start;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);  /* 2 cards per page on desktop */
+  grid-auto-rows: 1fr;
+  gap: 0.65rem;
+  padding: 0.7rem 0.2rem 1.2rem 0.2rem;
+  box-sizing: border-box;
+  justify-content: center;    
+  height: auto;
 }
+
+@media (max-width: 1100px) {
+  .playlist-page {
+    grid-template-columns: repeat(2, 1fr); /* 2 cards per page on tablets */
+  }
+}
+
+@media (max-width: 700px) {
+  .playlist-page {
+    grid-template-columns: repeat(1, 1fr); /* 1 card per page on mobile */
+    padding: 0.5rem 0.2rem 1rem 0.2rem;
+  }
+}
+
+/* ─── Slider container & scrollbar hiding ─────────────────────────── */
+.playlist-slider {
+  display: flex;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  width: 100%;
+  touch-action: pan-x;
+}
+.playlist-slider::-webkit-scrollbar {
+  display: none;
+}
+
 
 /* ─── Alerts ───────────────────────────────────────────────────────── */
 .alert {
@@ -217,7 +361,17 @@ input[type="submit"]:hover {
   margin-bottom: 1rem;
   font-size: .97rem;
   opacity: 1;
-  transition: opacity .5s ease;
+  transition: opacity .5s ease, max-height .5s cubic-bezier(.4,2,.6,1), margin .5s, padding .5s;
+  max-height: 100px;
+  overflow: hidden;
+}
+
+.alert.slide-out {
+  opacity: 0;
+  max-height: 0;
+  margin-bottom: 0;
+  padding-top: 0;
+  padding-bottom: 0;
 }
 
 /* ─── Animations ───────────────────────────────────────────────────── */
@@ -235,12 +389,13 @@ input[type="submit"]:hover {
   .sidebar {
     flex-direction:row;
     width:100%;
-    padding:1rem .5rem;
+    padding:1.5rem .5rem;
     border-right:none;
     border-bottom:1px solid #232323;
+    justify-content: center;
   }
   .brand {margin-bottom:0;margin-right:1.5rem;}
-  .nav {flex-direction:row;gap:.5rem;margin-left:auto;}
+  .nav {flex-direction:row;gap:1rem;margin-left:auto;}
 }
 @media (max-width:600px){
   .container {padding:1rem .5rem;}
@@ -254,102 +409,127 @@ input[type="submit"]:hover {
 .hero {
   max-width: 600px;
   margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  z-index: 1;
 }
-
 .hero-title {
   font-size: 2.25rem;
   font-weight: 700;
+  text-align: center;
+  z-index: 2;
+  background: transparent;
 }
-
-.hero-subtext {
-  font-size: 1rem;
-  color: #ccc;
+.hero-circle {
+  display: block;
+  margin: 1.2rem auto 1.2rem auto;
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  background: #111;
+  box-shadow: 0 0 32px 8px #40C05799, 0 0 0 8px #111, 0 0 64px 16px #40C05744;
+  z-index: 1;
+  position: relative;
 }
-
-/* Playlists page styles */
-.quality-select {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  margin-bottom: 1.5rem;
-}
-.quality-select label {
-  color: #ccc;
-  font-size: 1rem;
-}
-.quality-select select {
-  background: #222;
-  color: #eee;
-  border: 1px solid #232323;
-  border-radius: 8px;
-  padding: 0.5rem 1rem;
-  font-size: 1rem;
-}
-.playlist-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 1.5rem;
-}
-.playlist-card {
-  display: flex;
-  flex-direction: column;
-  background: #181818;
-  border-radius: 8px;
-  overflow: hidden;
-}
-.playlist-card img,
-.playlist-card .no-art {
-  width: 100%;
-  aspect-ratio: 1;
-  object-fit: cover;
-  border-radius: 8px 8px 0 0;
-  background: #333;
-}
-.card-footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.75rem;
-  background: #181818;
-  border-radius: 0 0 8px 8px;
-}
-.title {
-  font-size: 1rem;
-  font-weight: 600;
-  color: #eee;
-  margin: 0;
-  flex: 1;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.download-btn {
-  background: none;
-  border: none;
-  padding: 0;
-  cursor: pointer;
-}
-.download-btn svg {
-  width: 24px;
-  height: 24px;
-  fill: #1db954;
+@media (max-width: 700px) {
+  .hero {
+    margin-top: 2.5rem;
+    padding: 0 0.5rem;
+  }
+  .hero-title {
+    font-size: 1.4rem;
+  }
+  .hero-circle {
+    width: 60px;
+    height: 60px;
+    margin: 0.8rem auto 0.8rem auto;
+  }
 }
 
 /* ─── Dark‐mode overrides ─────────────────────────────────── */
 
+.search-bar {
+  display: flex;
+  width: 100%;
+  max-width: 500px;
+  margin-bottom: 1.5rem;
+}
+
+.search-bar .form-control {
+  flex: 1;
+  background: var(--bg-hover);
+  border: 1px solid #2a2a2a;
+  color: var(--text);
+  padding: 0.5rem 1rem;
+  border-radius: 4px 0 0 4px;
+  transition: border-color 150ms, box-shadow 150ms;
+}
+
+.search-bar .form-control::placeholder {
+  color: #888;
+  opacity: 1;
+}
+
+.search-bar .form-control:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(64,192,87,0.3);
+  outline: none;
+}
+
+.search-bar .btn-search {
+  background: var(--accent);
+  border: none;
+  color: #111;
+  padding: 0 1rem;
+  border-radius: 0 4px 4px 0;
+  font-weight: 500;
+  transition: background 150ms, box-shadow 150ms;
+}
+
+.search-bar .btn-search:hover,
+.search-bar .btn-search:focus {
+  background: rgba(64,192,87,0.85);
+  box-shadow: 0 0 8px var(--accent), 0 0 16px var(--accent);
+  outline: none;
+}
+
 /* List items: transparent background, white text, subtle divider */
 .list-group-item {
-  background: transparent !important;
+  position: relative;
+  background: #181818 !important;
   border: none !important;
   border-bottom: 1px solid #2a2a2a !important;
-  color: #eee !important;          /* force white text */
+  color: #eee !important;
   display: flex;
   align-items: center;
   padding: 0.75rem 1rem;
+  border-radius: 8px;
+  transition: box-shadow 0.18s, outline 0.18s, background 0.18s, transform 0.18s;
+  box-shadow: none;
+  cursor: pointer;
 }
 
-/* Thumbnail on the left */
-.cover-thumb {
+.list-group-item.selected {
+  outline: 2.5px solid #40C057;
+  background: #202f1d;
+  box-shadow: 0 8px 28px 0 #40C05755, 0 0 0 4px #40C05733;
+  transform: translateY(-2px) scale(1.035);
+  z-index: 2;
+}
+
+.list-group-item input[type="checkbox"] {
+  position: absolute;
+  right: 1.2rem;
+  top: 50%;
+  transform: translateY(-50%) scale(1.2);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.list-group-item .cover-thumb {
   width: 40px;
   height: 40px;
   flex-shrink: 0;
@@ -358,144 +538,260 @@ input[type="submit"]:hover {
   margin-right: 1rem;
 }
 
-/* Wrapper for track text */
-.track-info {
-  flex: 1;
-}
-.track-info strong {
-  display: block;
-  font-weight: 600;
-  color: #fff;                     /* bright title */
-}
-.track-info small {
-  color: #aaa;                     /* muted artist */
+.list-group-item:hover {
+  background: #23272b !important;
+  color: #fff !important;
+  z-index: 1;
 }
 
-/* Darken form controls (search box & quality select) */
-.form-control, 
-.form-select {
-  background: #181818 !important;
-  color: #eee !important;
-  border: 1px solid #2a2a2a !important;
-}
 
-/* Make the “Download Selected” button stand out */
-.btn-success {
-  background: #1db954;
-  border-color: #1db954;
-}
-
-.pagination {
-  margin: 1rem 0;
-}
-.page-link {
-  background: #181818;
-  color: #eee;
+.pagination .page-link {
+  background: var(--bg-hover);
+  color: var(--text);
   border: 1px solid #2a2a2a;
 }
-.page-item.active .page-link {
-  background: #1db954;
-  color: #000;
-  border-color: #1db954;
+.pagination .page-item:first-child .page-link,
+.pagination .page-item:last-child .page-link {
+  border-radius: 4px; /* same corner radius as cards/buttons */
 }
-.page-item.disabled .page-link {
+.pagination .page-item.active .page-link {
+  background: var(--accent);
+  color: #111;
+  border-color: var(--accent);
+  box-shadow: 0 0 8px var(--accent);
+}
+.pagination .page-item.disabled .page-link {
+  background: #232323;
   color: #555;
   pointer-events: none;
-  background: #222;
+}
+.pagination .page-item .page-link:hover {
+  background: var(--bg-hover);
+  box-shadow: 0 0 6px var(--accent);
 }
 
-.track-artist {
-  color: #aaa;
-  font-size: 0.9em;
+#global-quality {
+  background: var(--bg-hover);
+  color: var(--text);
+  border: 1px solid #2a2a2a;
+  border-radius: 4px;
+  padding: 0.25rem 0.5rem;
+  transition: border-color 150ms, box-shadow 150ms;
 }
 
-/* make artist names legible on dark bg */
-.list-group-item small,
-.track-info small {
-  color: #aaa !important;
+#global-quality:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(64,192,87,0.3);
+  outline: none;
 }
 
-/* make the Search… placeholder text more visible */
-input::placeholder {
-  color: #aaa !important;
-  opacity: 1; /* some browsers default opacity low */
+#global-quality option {
+  background: var(--bg-hover);
+  color: var(--text);
 }
 
-/* if you only want to target your filterable list input: */
-#search::placeholder {
-  color: #aaa !important;
-  opacity: 1;
+* ─── Playlist Page Slider ───────────────────────────────────────── */
+.slider-outer-wrapper {
+  position: relative;
+  width: 100%;
+  margin-bottom: 2rem;
+  min-height: 420px;
 }
-
-/* Ensure both Prev & Next share the same box‐outline */
-.pagination .page-item.previous .page-link,
-.pagination .page-item.next     .page-link {
-  background: transparent;      /* remove pill fill */
-  border: 1px solid #2a2a2a;    /* match the square buttons */
-  border-radius: 4px;           /* match the numbered buttons */
-  color: #eee;                  /* same text color */
-  padding: 0.5rem 1rem;
-  line-height: 1;
-  margin: 0;                    /* no extra spacing */
+.slider-wrapper {
+  width: 100%;
+  overflow: visible;
 }
-
-/* On hover, give them the same hover state as numbers */
-.pagination .page-item.previous .page-link:hover,
-.pagination .page-item.next     .page-link:hover {
-  background: #333;
-}
-
-/* Disabled Prev/Next should just be faded out */
-.pagination .page-item.disabled .page-link {
-  opacity: 0.4;
-  pointer-events: none;
-}
-
-/* Fade helper classes */
-.fade-enter {
-  opacity: 0;
-  transition: opacity 300ms ease-in;
-}
-.fade-enter-active {
-  opacity: 1;
-}
-.fade-exit {
-  opacity: 1;
-  transition: opacity 300ms ease-out;
-}
-.fade-exit-active {
-  opacity: 0;
-}
-
-/* Playlist‐card hover “lift” */
-.playlist-card {
-  transition: transform 200ms ease, box-shadow 200ms ease;
+.slider-prev, .slider-next {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 10;
+  background: rgba(24,25,26,0.92);
+  color: var(--accent);
+  border: none;
+  border-radius: 50%;
+  width: 2.5rem;
+  height: 2.5rem;
+  font-size: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 8px 0 var(--accent), 0 0 1px 0 var(--accent);
   cursor: pointer;
+  transition: background 0.15s, box-shadow 0.15s, color 0.15s;
+  opacity: 0.85;
+  user-select: none;
 }
-.playlist-card:hover {
-  transform: scale(1.03);
-  box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+.slider-prev {
+  left: -3.5rem;
+}
+.slider-next {
+  right: -3.5rem;
+}
+.slider-prev:hover, .slider-next:hover {
+  background: #23272b;
+  color: #fff;
+  box-shadow: 0 0 16px 2px var(--accent);
+  opacity: 1;
+}
+@media (max-width: 1400px) {
+  .slider-prev { left: -2rem; }
+  .slider-next { right: -2rem; }
+}
+@media (max-width: 1100px) {
+  .slider-prev { left: -1rem; }
+  .slider-next { right: -1rem; }
+  .playlist-page {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (max-width: 900px) {
+  .slider-prev, .slider-next { left: 0.2rem; right: 0.2rem; }
+}
+@media (max-width: 700px) {
+  .slider-prev, .slider-next {
+    pointer-events: none;
+    opacity: 0;
+    left: 0;
+    right: 0;
+  }
+  .playlist-page {
+    grid-template-columns: repeat(1, 1fr);
+    padding: 0.5rem 0.2rem 1rem 0.2rem;
+  }
+  .playlist-card {
+    max-width: 100vw;
+    height: auto;
+  }
+}
+.playlist-slider {
+  display: flex;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  width: 100%;
+  touch-action: pan-x;
+  justify-content: flex-start;
+}
+.playlist-slider::-webkit-scrollbar {
+  display: none;
+}
+.playlist-page {
+  flex: 0 0 100%;              /* full snap width */
+  scroll-snap-align: start;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.65rem;
+  padding: 0.7rem 1rem 1.2rem;  /* more symmetric horizontal padding */
+  box-sizing: border-box;
+  justify-content: center;
 }
 
-/* Selected state */
-.playlist-card.selected {
-  outline: 2px solid #1DB954;
+/* override on really small screens*/
+@media (max-width: 700px) {
+  .playlist-page {
+    grid-template-columns: repeat(1, 1fr);
+    padding: 0.5rem 0.2rem 1rem;
+  }
 }
 
-@media (max-width: 600px) {
-  /* Full-width inputs and buttons */
-  #search, #download-form .form-select, #download-form .btn {
-    width: 100% !important;
-  }
-  /* Stack the checkbox under the title */
-  #tracks-list .list-group-item {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.5rem;
-  }
-  #tracks-list .list-group-item input[type="checkbox"] {
-    margin-left: 0;
-    align-self: flex-end;
-  }
+/* ─── Quality Toggle Styles ────────────────────────────────────────── */
+.quality-toggle-group {
+  display: flex;
+  gap: 0.5rem;
+  margin: 0.5rem 0 0.5rem auto;
+  justify-content: flex-end;
+}
+.quality-toggle-group .quality-radio {
+  display: none;
+}
+.quality-pill {
+  display: inline-block;
+  padding: 0.35em 1.1em;
+  border-radius: 999px;
+  background: var(--bg-hover, #23272b);
+  color: var(--accent, #40C057);
+  font-size: 0.95em;
+  font-weight: 500;
+  cursor: pointer;
+  border: 2px solid transparent;
+  box-shadow: 0 0 0 0 var(--accent, #40C057);
+  transition: background 150ms, color 150ms, box-shadow 150ms, border 150ms, transform 150ms;
+  position: relative;
+  z-index: 1;
+}
+.quality-radio:checked + .quality-pill {
+  background: var(--accent, #40C057);
+  color: #18191a;
+  box-shadow: 0 0 12px 2px var(--accent, #40C057), 0 0 32px 0 var(--accent, #40C057);
+  border: 2px solid var(--accent, #40C057);
+  transform: scale(1.07);
+}
+.quality-pill:hover {
+  background: #222;
+  color: #fff;
+  box-shadow: 0 0 8px 2px var(--accent, #40C057), 0 0 16px 0 var(--accent, #40C057);
+  border: 2px solid var(--accent, #40C057);
+  transform: translateY(-1px) scale(1.04);
+}
+
+/* Remove old dropdown styles if present */
+.quality-dropdown, .quality-dropdown * {
+  display: none !important;
+}
+
+.status-barometer {
+  border-radius: 50%;
+  box-shadow: 0 0 0 0 transparent;
+  transition: box-shadow 0.2s, filter 0.2s;
+  background: transparent;
+}
+.status-barometer.connected {
+  filter: drop-shadow(0 0 6px var(--accent)) drop-shadow(0 0 16px var(--accent));
+  box-shadow: 0 0 0 3px #40C05755, 0 0 12px 2px #40C05799;
+  background: #23272b;
+}
+.status-barometer.disconnected {
+  /* Match .btn-primary styles */
+  filter: drop-shadow(0 0 6px #1db954) drop-shadow(0 0 16px #1db954);
+  box-shadow: 0 0 0 3px #1db95488, 0 0 12px 2px #1db95455, 0 0 24px 4px #1db95444;
+  background: #23272b;
+}
+
+.btn-primary.btn-lg, .btn-primary {
+  background: #1db954 !important;
+  border-color: #1db954 !important;
+  color: #fff !important;
+  box-shadow: 0 0 16px 2px #1db95455, 0 0 32px 4px #1db95433;
+}
+
+/* ─── Landing‐page vertical offset ───────────────────────────────── */
+body.home .main-content {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
+}
+
+body.home .container {
+  /* start at 0, JS will push it down */
+  margin-top: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* “connect” link uses default nav-link sizing but custom connect colors */
+.nav > a#home-action-btn {
+  background: transparent;        /* same transparent base */
+  color: var(--text);             /* off-white text */
+  box-shadow: none;               /* no initial glow */
+}
+.nav > a#home-action-btn:hover {
+  background: var(--bg-hover);    /* same hover background */
+  color: var(--accent);           /* glow accent on hover */
+  box-shadow: 0 0 8px var(--accent);
 }

@@ -24,59 +24,26 @@
 {% endmacro %}
 
 {# Playlist card with per-card bitrate notch + download button #}
-{% macro playlist_card(pl, idx, default_quality="320") %}
-  <div class="playlist-card position-relative">
-    {% if pl.images %}
-      <img src="{{ pl.images[0].url }}" alt="{{ pl.name }} cover">
-    {% else %}
-      <div class="no-art"></div>
-    {% endif %}
-
-    <div class="quality-dropdown dropdown">
-      <button class="notch-btn dropdown-toggle"
-              type="button"
-              id="qualityMenu{{ idx }}"
-              data-bs-toggle="dropdown"
-              aria-expanded="false">
-      </button>
-      <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="qualityMenu{{ idx }}">
-        <li>
-          <label class="dropdown-item mb-0">
-            <input type="radio"
-                   name="quality-{{ idx }}"
-                   value="320"
-                   class="me-2 quality-radio"
-                   {% if default_quality=='320' %}checked{% endif %}>
-            320 kbps
-          </label>
-        </li>
-        <li>
-          <label class="dropdown-item mb-0">
-            <input type="radio"
-                   name="quality-{{ idx }}"
-                   value="190"
-                   class="me-2 quality-radio"
-                   {% if default_quality=='190' %}checked{% endif %}>
-            190 kbps
-          </label>
-        </li>
-      </ul>
+{% macro playlist_card(pl, idx) %}
+  <label class="playlist-card-wrapper">
+    <input
+      type="checkbox"
+      name="idx"
+      value="{{ idx }}"
+      hidden
+      class="playlist-select-input"
+    >
+    <div class="playlist-card position-relative">
+      {% if pl.images %}
+        <img src="{{ pl.images[0].url }}" alt="{{ pl.name }} cover">
+      {% else %}
+        <div class="no-art"></div>
+      {% endif %}
+      <div class="card-footer d-flex justify-content-between align-items-center">
+        <span class="title">{{ pl.name }}</span>
+      </div>
     </div>
-
-    <div class="card-footer d-flex justify-content-between align-items-center">
-      <span class="title">{{ pl.name }}</span>
-      <form method="post" action="{{ url_for('do_download') }}" class="m-0 p-0">
-        <input type="hidden" name="kind" value="playlist">
-        <input type="hidden" name="idx" value="{{ idx }}">
-        <input type="hidden" name="quality" class="card-quality-input" value="{{ default_quality }}">
-        <button type="submit" class="download-btn" title="Download {{ pl.name }}">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-            <path d="M5 18h14v-2H5v2zM12 15l-4-4h3v-5h2v5h3l-4 4z"/>
-          </svg>
-        </button>
-      </form>
-    </div>
-  </div>
+  </label>
 {% endmacro %}
 
 {# Pagination control: Prev, pages 1–5, page 10 if >=10, Next #}

@@ -188,22 +188,22 @@ def logout():
 def playlists():
     if redirect_to := ensure_token():
         return redirect_to
+
     sp   = get_spotify()
     user = sp.current_user()
 
-    page, per_page = int(request.args.get('page', 1)), 15
-    offset = (page - 1) * per_page
-
-    results     = sp.playlists(user.id, limit=per_page, offset=offset)
-    page_items  = results.items
-    total       = results.total
-    total_pages = ceil(total / per_page)
+    playlists = []
+    limit, offset = 50, 0
+    while True:
+        results = sp.playlists(user.id, limit=limit, offset=offset)
+        playlists.extend(results.items)
+        if not results.next:
+            break
+        offset += limit
 
     return render_template(
         'playlists.html',
-        playlists=page_items,
-        page=page,
-        total_pages=total_pages
+        playlists=playlists
     )
 
 @app.route('/liked')

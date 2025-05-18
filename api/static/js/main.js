@@ -5,12 +5,12 @@
     if (!alerts.length) return;
     setTimeout(() => {
       alerts.forEach(alert => {
-        alert.style.opacity = '0';
+        alert.classList.add('slide-out');
         setTimeout(() => {
           if (alert.parentNode) alert.parentNode.removeChild(alert);
         }, 500);
       });
-    }, 2000);
+    }, 900);
   }
 
   if (document.readyState === 'loading') {
@@ -54,3 +54,46 @@ function fadeToggle(elem, show) {
     }, { once: true });
   }
 }
+
+document.addEventListener('DOMContentLoaded', () => {
+  // Remove per-playlist quality and download icon JS. Only keep global quality sync if needed.
+
+  document.querySelectorAll('.playlist-card').forEach(card => {
+    const checkbox = card.querySelector('input[type="checkbox"]');
+    if (!checkbox) return;
+    // Card click toggles selection
+    card.addEventListener('click', function(e) {
+      if (e.target.tagName === 'INPUT') return;
+      checkbox.checked = !checkbox.checked;
+      card.classList.toggle('selected', checkbox.checked);
+    });
+    // Checkbox change updates card
+    checkbox.addEventListener('change', function() {
+      card.classList.toggle('selected', checkbox.checked);
+    });
+  });
+
+  // Selection logic for liked songs (download.html)
+  document.querySelectorAll('.list-group-item input[type="checkbox"]').forEach(cb => {
+    const li = cb.closest('.list-group-item');
+    // Hide checkbox visually, but keep accessible
+    cb.style.opacity = 0;
+    cb.style.position = 'absolute';
+    cb.style.right = '1.2rem';
+    cb.style.top = '50%';
+    cb.style.transform = 'translateY(-50%) scale(1.2)';
+    cb.style.pointerEvents = 'none';
+    // Click on row toggles selection
+    li.addEventListener('click', function(e) {
+      if (e.target === cb) return;
+      cb.checked = !cb.checked;
+      li.classList.toggle('selected', cb.checked);
+    });
+    // Checkbox change updates row
+    cb.addEventListener('change', function() {
+      li.classList.toggle('selected', cb.checked);
+    });
+    // Initial state
+    li.classList.toggle('selected', cb.checked);
+  });
+});

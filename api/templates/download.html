@@ -7,30 +7,38 @@
     <h2 class="mb-0">liked songs</h2>
 
     <form
-      id="download-form"
+      id="multi-actions"
       method="post"
       action="{{ url_for('do_download') }}"
-      class="d-flex flex-wrap align-items-center gap-2"
-      style="margin-left:auto;"
+      class="d-flex flex-wrap align-items-center gap-2 ms-auto"
     >
       <input type="hidden" name="kind" value="liked">
-      {{ macros.quality_select() }}
-      <button type="submit" class="btn btn-success">download selected</button>
+      <input type="hidden" name="quality" id="multi-quality-input" value="320">
+      <label for="global-quality" class="me-2" style="color:#ccc;">quality:</label>
+      <select id="global-quality" class="form-select form-select-sm" style="width:auto;max-width:90px;">
+        <option value="320" selected>320 kbps</option>
+        <option value="190">190 kbps</option>
+      </select>
+      <button type="submit" class="btn btn-success d-flex align-items-center">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" style="width:1.3em;height:1.3em;fill:#fff;margin-right:0.5em;"><path d="M5 18h14v-2H5v2zM12 15l-4-4h3v-5h2v5h3l-4 4z"/></svg>
+        download selected
+      </button>
     </form>
   </div>
 
   {# ─── Search Bar (client-side) ───────────────────────────────────── #}
-  <form method="get" action="{{ url_for('liked') }}" class="mb-3 d-flex">
-    <input
+  <form id="search-form" class="search-bar" method="get" action="{{ url_for('liked') }}">
+  <input
     id="search"
-    name="search" 
+    name="search"
     type="text"
-    class="form-control me-2"
-    placeholder="🔍 Search your liked songs…"
-    value="{{ request.args.get('search','') }}"
-    >
-    <button class="btn btn-outline-secondary" type="submit">Search</button>
-  </form>
+    class="form-control"
+    placeholder="search your liked songs…"
+    value="{{ search }}"
+    aria-label="search your liked songs"
+  >
+  <button type="submit" class="btn btn-search">search</button>
+</form>
 
 
   {# ─── Track List ─────────────────────────────────────────────────── #}

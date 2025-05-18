@@ -17,41 +17,126 @@
     rel="stylesheet"
     href="{{ url_for('static', filename='css/style.css') }}">
 </head>
-<body>
+<body class="{% if request.endpoint == 'index' %}home{% endif %}">
+
+  <!-- ─── 1) MOBILE HEADER + HAMBURGER (only below lg) ───────────────── -->
+  <header class="mobile-header d-flex d-lg-none align-items-center px-3" style="background: var(--bg); position: fixed; width: 100%; z-index: 1050; height: 3rem;">
+    <button
+      class="btn btn-hamburger p-0"
+      type="button"
+      data-bs-toggle="offcanvas"
+      data-bs-target="#mobileNav"
+      aria-label="Menu"
+      style="background:none;border:none;color:var(--text);font-size:1.5rem;">
+      ☰
+    </button>
+    <span class="mobile-brand ms-2" style="color:var(--text); font-size:1.25rem;">
+      ruthenium<span style="color:#40C057;">.mp3</span>
+    </span>
+  </header>
+
+  <!-- ─── 2) OFFCANVAS SIDEBAR (mobile) ──────────────────────────────── -->
+  <div class="offcanvas offcanvas-start" tabindex="-1" id="mobileNav">
+    <div class="offcanvas-body p-0">
+      <nav class="sidebar h-100 d-flex flex-column">
+        <span class="brand" id="brand-logo" style="font-family: 'Orbitron', 'Segoe UI', 'Inter', Arial, sans-serif; font-weight: 500; font-size: 1.7rem; letter-spacing: 2px; text-transform: lowercase; color: #fff; text-shadow: 0 2px 8px #40C057, 0 0 16px #fff, 2px 2px 0 #222, 0 0 32px #40C057; cursor: pointer; transition: transform 0.2s cubic-bezier(.4,2,.6,1), text-shadow 0.2s; display: inline-block;">
+          ruthenium&#10;&#13;<span style="color:#40C057;text-shadow:0 0 8px #40C057,0 0 16px #fff;">.mp3</span>
+        </span>
+        <div class="nav">
+          <img src="https://img.icons8.com/forma-bold-filled/160/barometer-gauge.png"
+               alt="Status"
+               class="status-barometer {% if logged_in %}connected{% else %}disconnected{% endif %}"
+               style="width:48px;height:48px;vertical-align:middle;" />
+          {% if logged_in %}
+            <a id="home-action-btn" href="{{ url_for('playlists') }}"
+               class="{% if request.endpoint=='playlists' %}active{% endif %}">
+              playlists
+            </a>
+            <a href="{{ url_for('liked') }}"
+               class="{% if request.endpoint=='liked' %}active{% endif %}">
+              liked songs
+            </a>
+            <form action="{{ url_for('logout') }}"
+                  method="post"
+                  style="margin-top:1rem;">
+              <button id="disconnect-btn"
+                      type="submit"
+                      class="btn btn-secondary"
+                      style="padding:0.3rem 0.9rem;font-size:0.98rem;">
+                disconnect
+              </button>
+            </form>
+          {% else %}
+            <a id="home-action-btn"
+               href="{{ url_for('login') }}"
+               style="margin-top:1rem; display:inline-block; padding:0.5rem 1rem; background:#1db954; color:#fff; border-radius:6px; text-decoration:none;">
+              connect
+            </a>
+          {% endif %}
+        </div>
+        <!-- no footer credit here on mobile drawer -->
+      </nav>
+    </div>
+  </div>
+
   <div class="layout">
-    <nav class="sidebar">
-      <span class="brand">ruthenium .mp3</span>
-      <div class="nav">
+
+    <!-- ─── 3) DESKTOP SIDEBAR (shown ≥ lg) ─────────────────────────────── -->
+    <nav class="sidebar d-none d-lg-flex">
+      <span class="brand" id="brand-logo" style="font-family: 'Orbitron', 'Segoe UI', 'Inter', Arial, sans-serif; font-weight: 500; font-size: 1.7rem; letter-spacing: 2px; text-transform: lowercase; color: #fff; text-shadow: 0 2px 8px #40C057, 0 0 16px #fff, 2px 2px 0 #222, 0 0 32px #40C057; cursor: pointer; transition: transform 0.2s cubic-bezier(.4,2,.6,1), text-shadow 0.2s; display: inline-block;">
+        ruthenium&#10;&#13;<span style="color:#40C057;text-shadow:0 0 8px #40C057,0 0 16px #fff;">.mp3</span>
+      </span>
+      <div class="nav" style="display: flex; flex-direction: column; align-items: stretch; gap: 1.2rem; width: 100%; margin-bottom: 2.5rem;">
+        <img src="https://img.icons8.com/forma-bold-filled/160/barometer-gauge.png"
+             alt="Status"
+             class="status-barometer {% if logged_in %}connected{% else %}disconnected{% endif %}"
+             style="width:48px;height:48px;vertical-align:middle; align-self: center;" />
         {% if logged_in %}
-          <span style="color:#1db954;font-size:1.2rem;vertical-align:middle;">🟢</span>
-          <a href="{{ url_for('playlists') }}"
-             class="{% if request.endpoint=='playlists' %}active{% endif %}">
+          <a id="home-action-btn" href="{{ url_for('playlists') }}"
+             class="{% if request.endpoint=='playlists' %}active{% endif %}"
+             style="width:100%; text-align:center;">
             playlists
           </a>
           <a href="{{ url_for('liked') }}"
-             class="{% if request.endpoint=='liked' %}active{% endif %}">
+             class="{% if request.endpoint=='liked' %}active{% endif %}"
+             style="width:100%; text-align:center;">
             liked songs
           </a>
           <form action="{{ url_for('logout') }}"
                 method="post"
-                style="margin-top:1rem;">
+                style="width:100%; margin:0;">
             <button type="submit"
                     class="btn btn-secondary"
-                    style="padding:0.3rem 0.9rem;font-size:0.98rem;">
+                    style="padding:0.3rem 0.9rem;font-size:0.98rem;width:100%;text-align:center;">
               disconnect
             </button>
           </form>
         {% else %}
-          <span style="color:#bbb;font-size:1.2rem;vertical-align:middle;">🔴</span>
-          <a href="{{ url_for('login') }}" class="btn btn-primary" style="margin-top:1rem;">
+          <a id="home-action-btn"
+             href="{{ url_for('login') }}"
+             style="margin-top:1rem; display:inline-block; padding:0.5rem 1rem; background:#1db954; color:#fff; border-radius:6px; text-decoration:none;">
             connect
           </a>
         {% endif %}
       </div>
+      <div class="sidebar-credit d-none d-lg-block" style="margin-top:auto;padding-top:2rem;font-size:0.95rem;color:#888;">
+        <a href="https://icons8.com"
+           target="_blank"
+           style="color:#888;text-decoration:none;">
+          app icon(s) by Icons8
+        </a>
+      </div>
     </nav>
 
-    <div class="main-content">
-      <div class="container {% if request.endpoint in ['playlists','liked'] %}wide{% endif %}">
+    <!-- ─── 4) MAIN CONTENT ─────────────────────────────────────────────── -->
+    <div class="main-content"
+            {% if request.endpoint != 'index' %}
+              style="flex:1; display:flex; flex-direction:column; align-items:center; background:#111; padding-top:0;"
+            {% else %}
+              style="flex:1; display:flex; flex-direction:column; align-items:center; background:#111;"
+            {% endif %}
+    >
+      <div class="container {% if request.endpoint in ['playlists','liked'] %}wide{% endif %}" {% if request.endpoint!='index' %}style="margin-top:2rem;"{% endif %}>
         {% with messages = get_flashed_messages(with_categories=true) %}
           {% if messages %}
             {% for cat, msg in messages %}
@@ -64,14 +149,75 @@
     </div>
   </div>
 
+  <!-- ─── 5) FOOTER CREDIT ────────────────────────────────────────────── -->
+  <!-- Only show on mobile -->
+  <footer class="mobile-footer d-lg-none text-center py-3" style="background:var(--bg-hover); color:#888;">
+    <a href="https://icons8.com"
+       target="_blank"
+       class="text-muted small"
+       style="color:#888; text-decoration:none;">
+      app icon(s) by Icons8
+    </a>
+  </footer>
+
   <!-- Your custom JS -->
   <script src="{{ url_for('static', filename='js/main.js') }}"></script>
   {% block scripts %}{% endblock %}
 
-  <!-- Bootstrap 5 bundle (includes Popper.js) -->
+  <!-- Bootstrap 5 bundle (includes Popper & Offcanvas) -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"
           integrity="sha384-geWF76RCwLtnZ8qwWowPQNguL3RmwHVBC9FhGdlKrxdiJJigb/j/68SIy3Te4Bkz"
           crossorigin="anonymous">
   </script> 
+
+  <script>
+    // Responsive 3D pop effect on hover/click for brand
+    const brand = document.getElementById('brand-logo');
+    if (brand) {
+      brand.addEventListener('mouseenter', () => {
+        brand.style.transform = 'scale(1.08) rotateX(8deg) skewY(-2deg)';
+        brand.style.textShadow = '0 4px 24px #40C057, 0 0 32px #fff, 4px 4px 0 #222, 0 0 48px #40C057';
+      });
+      brand.addEventListener('mouseleave', () => {
+        brand.style.transform = '';
+        brand.style.textShadow = '0 2px 8px #40C057, 0 0 16px #fff, 2px 2px 0 #222, 0 0 32px #40C057';
+      });
+      brand.addEventListener('mousedown', () => {
+        brand.style.transform = 'scale(0.97) rotateX(-4deg) skewY(2deg)';
+      });
+      brand.addEventListener('mouseup', () => {
+        brand.style.transform = 'scale(1.08) rotateX(8deg) skewY(-2deg)';
+      });
+      brand.addEventListener('click', () => {
+        window.location.href = '/';
+      });
+    }
+  </script>
+
+  <script>
+    (function() {
+      function alignHomeHero() {
+        if (!document.body.classList.contains('home')) return;
+
+        // pick the element that we're lining up to:
+        const ref = document.getElementById('home-action-btn');
+        const container = document.querySelector('body.home .container');
+        if (!ref || !container) return;
+
+        // compute how far from top
+        const rect = ref.getBoundingClientRect();
+        const offset = rect.top + window.scrollY;
+
+        // apply that margin to the hero
+        container.style.marginTop = offset + 'px';
+      }
+
+      window.addEventListener('load',  alignHomeHero);
+      window.addEventListener('resize', () => {
+        clearTimeout(window._alignTimer);
+        window._alignTimer = setTimeout(alignHomeHero, 100);
+      });
+    })();
+  </script>
 </body>
 </html>
