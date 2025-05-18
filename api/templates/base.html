@@ -48,7 +48,7 @@
                class="status-barometer {% if logged_in %}connected{% else %}disconnected{% endif %}"
                style="width:48px;height:48px;vertical-align:middle;" />
           {% if logged_in %}
-            <a id="home-action-btn" href="{{ url_for('playlists') }}"
+            <a href="{{ url_for('playlists') }}"
                class="{% if request.endpoint=='playlists' %}active{% endif %}">
               playlists
             </a>
@@ -56,25 +56,20 @@
                class="{% if request.endpoint=='liked' %}active{% endif %}">
               liked songs
             </a>
-            <form action="{{ url_for('logout') }}"
-                  method="post"
-                  style="margin-top:1rem;">
-              <button id="disconnect-btn"
-                      type="submit"
+            <form action="{{ url_for('logout') }}" method="post">
+              <button type="submit"
                       class="btn btn-secondary"
                       style="padding:0.3rem 0.9rem;font-size:0.98rem;">
                 disconnect
               </button>
             </form>
           {% else %}
-            <a id="home-action-btn"
-               href="{{ url_for('login') }}"
+            <a href="{{ url_for('login') }}"
                style="margin-top:1rem; display:inline-block; padding:0.5rem 1rem; background:#1db954; color:#fff; border-radius:6px; text-decoration:none;">
               connect
             </a>
           {% endif %}
         </div>
-        <!-- no footer credit here on mobile drawer -->
       </nav>
     </div>
   </div>

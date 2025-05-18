@@ -17,3 +17,4 @@ services:
     # override the default CMD if needed
     # command: sh -c "gunicorn api.index:app --bind 0.0.0.0:8080 --workers 5 --threads 4 --timeout 120"
 
+  

@@ -288,7 +288,7 @@ html, body {
 /* Responsive grid tweaks for desktop */
 @media (min-width: 1200px) {
   .playlist-grid {
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
     gap: 0.55rem;
   }
   .playlist-card {
@@ -310,31 +310,41 @@ html, body {
 }
 
 /* ─── Slider page grid override ───────────────────────────────────── */
+
+/*
 .playlist-page {
-  flex: 0 0 100%;            /* Each page always takes 100% of slider width */
+  flex: 0 0 100%;
   scroll-snap-align: start;
   display: grid;
-  grid-template-columns: repeat(2, 1fr);  /* 2 cards per page on desktop */
-  grid-auto-rows: 1fr;
+  grid-template-columns: repeat(2, 1fr);
+  grid-template-rows: repeat(2, 1fr);   
   gap: 0.65rem;
   padding: 0.7rem 0.2rem 1.2rem 0.2rem;
   box-sizing: border-box;
-  justify-content: center;    
+  justify-content: center;
   height: auto;
 }
+*/
 
-@media (max-width: 1100px) {
+/* Small desktops / large tablets (~ up to 992px) 
+@media (max-width: 992px) {
   .playlist-page {
-    grid-template-columns: repeat(2, 1fr); /* 2 cards per page on tablets */
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: repeat(auto-fill, 1fr);
   }
-}
+} 
+*/
 
-@media (max-width: 700px) {
+/* Phones (~ up to 576px) */
+@media (max-width: 576px) {
   .playlist-page {
-    grid-template-columns: repeat(1, 1fr); /* 1 card per page on mobile */
+    /* 1 column */
+    grid-template-columns: 1fr;
+    grid-template-rows: none;
     padding: 0.5rem 0.2rem 1rem 0.2rem;
   }
 }
+
 
 /* ─── Slider container & scrollbar hiding ─────────────────────────── */
 .playlist-slider {
@@ -422,10 +432,11 @@ html, body {
   text-align: center;
   z-index: 2;
   background: transparent;
+  margin-bottom: 1.2rem;
 }
 .hero-circle {
   display: block;
-  margin: 1.2rem auto 1.2rem auto;
+  margin: 0 auto 1.2rem auto;
   width: 90px;
   height: 90px;
   border-radius: 50%;
@@ -441,11 +452,12 @@ html, body {
   }
   .hero-title {
     font-size: 1.4rem;
+    margin-bottom: 1.1rem;
   }
   .hero-circle {
     width: 60px;
     height: 60px;
-    margin: 0.8rem auto 0.8rem auto;
+    margin: 0 auto 1.1rem auto;
   }
 }
 
@@ -590,7 +602,7 @@ html, body {
   color: var(--text);
 }
 
-* ─── Playlist Page Slider ───────────────────────────────────────── */
+/* ─── Playlist Page Slider ───────────────────────────────────────── */
 .slider-outer-wrapper {
   position: relative;
   width: 100%;
@@ -681,11 +693,22 @@ html, body {
   flex: 0 0 100%;              /* full snap width */
   scroll-snap-align: start;
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(5, 1fr);  /* 5 columns */
+  grid-template-rows: repeat(2, 1fr);     /* 2 rows */
   gap: 0.65rem;
-  padding: 0.7rem 1rem 1.2rem;  /* more symmetric horizontal padding */
+  padding: 0.7rem 0.2rem 1.2rem 0.2rem;
   box-sizing: border-box;
   justify-content: center;
+  height: auto;
+}
+
+/* small desktops / large tablets (~ up to 992px) */
+@media (max-width: 992px) {
+  .playlist-page {
+    /* 2 columns, more rows */
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: none;
+  }
 }
 
 /* override on really small screens*/
